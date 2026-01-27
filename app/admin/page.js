@@ -198,7 +198,7 @@ export default function AdminPage() {
               disabled={uploading || selectedFiles.length === 0}
               className="w-full bg-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {uploading ? "Sedang Upload..." : `Upload ${selectedFiles.length > 0 ? selectedFiles.length + " Gambar" : ""} Sekarang 🚀`}
+              {uploading ? "Sedang Upload..." : `Muat Naik ${selectedFiles.length > 0 ? selectedFiles.length + " Gambar" : ""} `}
             </button>
           </div>
         </div>
