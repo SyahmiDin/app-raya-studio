@@ -79,7 +79,7 @@ export default function Home() {
       {/* Preview Hasil */}
       {uploadedUrl && (
         <div className="mt-10 text-center">
-          <p className="mb-2 text-black font-bold">Gambar dah masuk Cloudflare!</p>
+          <p className="mb-2 text-white font-bold">Gambar dah masuk Cloudflare!</p>
           <img src={uploadedUrl} alt="Uploaded" className="w-64 h-auto rounded shadow-lg mx-auto" />
           
           <div className="mt-4">
