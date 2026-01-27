@@ -4,7 +4,6 @@ import { ListObjectsV2Command } from "@aws-sdk/client-s3";
 import r2 from "@/lib/r2";
 
 export async function GET(request) {
-  // Kita ambil nama folder dari URL (contoh: ?folder=ahmad-albureng)
   const { searchParams } = new URL(request.url);
   const folder = searchParams.get("folder");
 
@@ -15,18 +14,19 @@ export async function GET(request) {
   try {
     const command = new ListObjectsV2Command({
       Bucket: process.env.R2_BUCKET_NAME,
-      Prefix: folder + "/", // Kita filter ikut nama folder sahaja
+      Prefix: folder + "/", 
     });
 
     const data = await r2.send(command);
 
-    // Kalau folder kosong / tak wujud
     if (!data.Contents) {
       return NextResponse.json({ photos: [] });
     }
 
-    // Kita format data supaya frontend senang baca
-    const photos = data.Contents.map((file) => {
+    // FILTER: Hanya ambil file gambar, abaikan file system (.sys)
+    const photos = data.Contents
+      .filter((file) => !file.Key.endsWith(".sys")) // <--- RAHSIA KITA DI SINI
+      .map((file) => {
         return {
             key: file.Key,
             url: `${process.env.R2_PUBLIC_DOMAIN}/${file.Key}`,

@@ -1,3 +1,4 @@
+// app/api/upload/route.js
 import { NextResponse } from "next/server";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import r2 from "@/lib/r2";
@@ -5,37 +6,47 @@ import r2 from "@/lib/r2";
 export async function POST(request) {
   try {
     const formData = await request.formData();
-    const file = formData.get("file"); // Kita akan hantar field nama "file" dari frontend
-    const clientName = formData.get("clientName"); // Folder client
+    const file = formData.get("file");
+    const clientName = formData.get("clientName");
 
-    if (!file) {
-      return NextResponse.json({ error: "Tiada fail dikesan" }, { status: 400 });
+    if (!file || !clientName) {
+      return NextResponse.json({ error: "Fail diperlukan" }, { status: 400 });
     }
 
-    // 1. Convert File kepada Buffer
+    // Convert file kepada Buffer
     const buffer = Buffer.from(await file.arrayBuffer());
     
-    // 2. Buat nama fail unik: "nama_client/tarikh-namafile.jpg"
-    const fileName = `${clientName}/${Date.now()}-${file.name}`;
+    // --- LOGIC PENENTUAN NAMA FAIL (PENTING!) ---
+    let finalKey;
+    
+    if (file.name.endsWith(".sys")) {
+      // KALAU FAIL KUNCI: Guna nama asal (cth: lock-1234.sys)
+      // Supaya kita boleh cari balik nanti
+      finalKey = `${clientName}/${file.name}`;
+    } else {
+      // KALAU GAMBAR BIASA: Tambah timestamp supaya tak overwrite
+      // cth: keluarga-siti/1715000-gambar.jpg
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
+      finalKey = `${clientName}/${uniqueSuffix}-${file.name}`;
+    }
 
-    // 3. Setup Command Upload
+    // Upload ke R2
     const command = new PutObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
-      Key: fileName,
+      Key: finalKey,
       Body: buffer,
       ContentType: file.type,
     });
 
-    // 4. Tembak ke R2
     await r2.send(command);
 
-    // 5. Return Public URL
-    const publicUrl = `${process.env.R2_PUBLIC_DOMAIN}/${fileName}`;
-
-    return NextResponse.json({ success: true, url: publicUrl });
+    return NextResponse.json({ 
+      success: true, 
+      url: `${process.env.R2_PUBLIC_DOMAIN}/${finalKey}` 
+    });
 
   } catch (error) {
-    console.error("Upload Error:", error);
+    console.error("Upload error:", error);
     return NextResponse.json({ error: "Gagal upload" }, { status: 500 });
   }
 }
