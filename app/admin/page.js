@@ -223,7 +223,7 @@ export default function AdminPage() {
              </div>
           )}
           <button onClick={handleBulkUpload} disabled={uploading || selectedFiles.length === 0} className="w-full bg-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 disabled:opacity-50 transition transform active:scale-95 shadow-lg">
-            {uploading ? `Sedang Upload...` : `Upload Album Baru 🚀`}
+            {uploading ? `Sedang Upload...` : `Muat Naik`}
           </button>
         </div>
 
@@ -260,9 +260,9 @@ export default function AdminPage() {
                                     </td>
                                     <td className="p-4 text-gray-500">{album.count} keping</td>
                                     <td className="p-4 flex justify-center gap-2">
-                                        <a href={`/gallery?client=${album.name}`} target="_blank" className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded" title="Tengok Galeri">👁️</a>
-                                        <a href={`https://wa.me/?text=Salam, ini gambar raya anda! Link: ${window.location.origin}/gallery?client=${album.name} PIN: *${album.pin}*`} target="_blank" className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded" title="Share WhatsApp">📲</a>
-                                        <button onClick={() => handleDeleteAlbum(album.name)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded" title="Padam Album">🗑️</button>
+                                        <a href={`/gallery?client=${album.name}`} target="_blank" className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded" title="Tengok Galeri">View</a>
+                                        <a href={`https://wa.me/?text=Salam, ini gambar raya anda! Link: ${window.location.origin}/gallery?client=${album.name} PIN: *${album.pin}*`} target="_blank" className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded" title="Share WhatsApp">Kongsi</a>
+                                        <button onClick={() => handleDeleteAlbum(album.name)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded" title="Padam Album">Delete</button>
                                     </td>
                                 </tr>
                             ))}
