@@ -1,6 +1,6 @@
-// app/admin/page.js
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link"; // <--- Tambah ini
 
 export default function AdminPage() {
   // --- UTILS ---
@@ -97,12 +97,6 @@ export default function AdminPage() {
     return "";
   };
 
-  const handleCopyLink = (text) => {
-    navigator.clipboard.writeText(text);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
-  };
-
   // --- FUNCTION UPLOAD BARU (DIRECT CLOUDFLARE) 🚀 ---
   async function handleBulkUpload(e) {
     e.preventDefault();
@@ -175,11 +169,36 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center p-6">
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-4xl border border-gray-100 relative">
-        <h1 className="text-3xl font-bold mb-8 text-center text-gray-800">
-          Admin Dashboard
-        </h1>
+        
+        {/* --- HEADER BARU (Ada Button Booking & Logout) --- */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4 border-b pb-6">
+            <h1 className="text-3xl font-bold text-gray-800">
+              Admin Dashboard 📸
+            </h1>
 
-        {/* --- FORM UPLOAD --- */}
+            <div className="flex gap-3">
+                 {/* BUTANG KE BOOKING LIST */}
+                 <Link 
+                   href="/admin/bookings" 
+                   className="bg-blue-600 text-white px-5 py-2 rounded-lg font-bold shadow hover:bg-blue-700 transition flex items-center gap-2"
+                 >
+                   📅 List Booking
+                 </Link>
+
+                 {/* BUTANG LOGOUT */}
+                 <button
+                   onClick={() => {
+                     document.cookie = "admin_session=; path=/; max-age=0";
+                     window.location.href = "/";
+                   }}
+                   className="bg-white border border-gray-300 text-gray-700 px-5 py-2 rounded-lg font-bold hover:bg-gray-100 transition"
+                 >
+                   Logout 🚪
+                 </button>
+            </div>
+        </div>
+
+        {/* --- FORM UPLOAD (Kekal Sama) --- */}
         <div className="space-y-6 mb-12 border-b pb-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
@@ -227,7 +246,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* --- DASHBOARD LIST --- */}
+        {/* --- DASHBOARD LIST (Kekal Sama) --- */}
         <div>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">Senarai Album ({albums.length})</h2>
@@ -273,7 +292,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* --- POPUP SUCCESS --- */}
+      {/* --- POPUP SUCCESS (Kekal Sama) --- */}
       {showSuccessModal && lastUpload && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
