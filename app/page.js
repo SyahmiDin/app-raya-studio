@@ -24,7 +24,7 @@ export default function LandingPage() {
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{ 
-            backgroundImage: "",
+            backgroundImage: "source/bg.jpeg",
         }}
       >
         {/* Layer Hitam Nipis supaya tulisan jelas */}

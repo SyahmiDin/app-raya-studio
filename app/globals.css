@@ -24,3 +24,25 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* --- PAKSA INPUT JADI JELAS --- */
+/* Kod ini pastikan semua kotak input, dropdown, dan date picker */
+/* sentiasa ada background putih dan tulisan hitam pekat */
+
+input, textarea, select {
+  color: #111827 !important; /* Hitam Pekat (Gray-900) */
+  background-color: #ffffff !important; /* Putih */
+  caret-color: #000000; /* Garis berkelip (cursor) warna hitam */
+}
+
+/* Fix khas untuk input Tarikh (Date Picker) supaya ikon kalendar nampak */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0); /* Pastikan ikon kalendar warna hitam */
+  cursor: pointer;
+}
+
+/* Fix untuk placeholder (tulisan pudar sebelum kita taip) */
+::placeholder {
+  color: #9ca3af !important; /* Kelabu sederhana (Gray-400) */
+  opacity: 1;
+}
