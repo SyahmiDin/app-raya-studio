@@ -1,6 +1,4 @@
 // app/admin/bookings/page.js
-export const dynamic = "force-dynamic";
-
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -16,38 +14,38 @@ export default function AdminBookingsPage() {
   async function fetchBookings() {
     setLoading(true);
     
-    // --- MAGIC HAPPENS HERE (RELATION QUERY) ---
-    // Kita select semua dari 'bookings' (*),
-    // DAN kita minta dia ambil 'name' dari table 'services' yang bersambung
+    // Safety check: Kalau supabase tak connect (sebab key palsu masa build), stop sini
+    if (!supabase) return;
+
     const { data, error } = await supabase
       .from('bookings')
       .select(`
         *,
         services ( name, duration_minutes )
       `)
-      .order('booking_date', { ascending: false }) // Yang baru duduk atas
+      .order('booking_date', { ascending: false })
       .order('start_time', { ascending: true });
 
     if (error) {
       console.error("Error fetching bookings:", error);
-      alert("Gagal ambil data booking");
+      // Tak perlu alert masa build/server render
     } else {
-      setBookings(data);
+      setBookings(data || []);
     }
     setLoading(false);
   }
 
-  // Helper: Format nombor untuk link WhatsApp (buang - , tambah 60)
   const getWhatsappLink = (phone, name, date, time) => {
-    let cleanPhone = phone.replace(/\D/g, ''); // Buang semua simbol
-    if (cleanPhone.startsWith('0')) cleanPhone = '6' + cleanPhone; // Tukar 012 jadi 6012
+    if (!phone) return "#";
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.startsWith('0')) cleanPhone = '6' + cleanPhone;
     
     const message = `Salam ${name}, saya dari Studio Raya. Nak confirmkan booking anda pada ${date} jam ${time}.`;
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
   };
 
-  // Helper: Format Tarikh cantik (DD/MM/YYYY)
   const formatDate = (dateString) => {
+    if (!dateString) return "-";
     const options = { day: 'numeric', month: 'short', year: 'numeric' };
     return new Date(dateString).toLocaleDateString('ms-MY', options);
   };
@@ -56,84 +54,74 @@ export default function AdminBookingsPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Senarai Tempahan (Bookings)</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Senarai Tempahan (Bookings)</h1>
           <div className="flex gap-2">
-             <button onClick={fetchBookings} className="bg-white border px-4 py-2 rounded shadow text-gray-800 hover:bg-gray-100">
+             <button onClick={fetchBookings} className="bg-white border border-gray-300 px-4 py-2 rounded shadow-sm hover:bg-gray-100 text-gray-800 font-medium">
                Refresh ↻
              </button>
-             <a href="/admin" className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800">
+             <a href="/admin" className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 font-medium">
                Ke Gallery Upload →
              </a>
           </div>
         </div>
 
         {loading ? (
-          <div className="text-center py-20 text-gray-500 animate-pulse">Sedang memuatkan data... ⏳</div>
+          <div className="text-center py-20 text-gray-600 animate-pulse font-medium">Sedang memuatkan data... ⏳</div>
         ) : bookings.length === 0 ? (
-          <div className="bg-white p-10 rounded-xl shadow text-center text-gray-500">
+          <div className="bg-white p-10 rounded-xl shadow text-center text-gray-600 font-medium">
             Belum ada tempahan lagi.
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
-                    <th className="p-4 border-b">Tarikh & Masa</th>
-                    <th className="p-4 border-b">Client</th>
-                    <th className="p-4 border-b">Pakej (Service)</th>
-                    <th className="p-4 border-b">Status</th>
-                    <th className="p-4 border-b text-center">Tindakan</th>
+                  <tr className="bg-gray-100 text-gray-800 uppercase text-xs tracking-wider font-bold">
+                    <th className="p-4 border-b border-gray-200">Tarikh & Masa</th>
+                    <th className="p-4 border-b border-gray-200">Client</th>
+                    <th className="p-4 border-b border-gray-200">Pakej (Service)</th>
+                    <th className="p-4 border-b border-gray-200">Status</th>
+                    <th className="p-4 border-b border-gray-200 text-center">Tindakan</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {bookings.map((book) => (
                     <tr key={book.id} className="hover:bg-blue-50 transition duration-150">
-                      
-                      {/* COLUMN 1: TARIKH */}
                       <td className="p-4">
-                        <div className="font-bold text-gray-800">{formatDate(book.booking_date)}</div>
-                        <div className="text-blue-600 font-mono text-lg">{book.start_time.slice(0,5)}</div>
+                        <div className="font-bold text-gray-900">{formatDate(book.booking_date)}</div>
+                        <div className="text-blue-700 font-mono text-lg font-bold">{book.start_time?.slice(0,5)}</div>
                       </td>
-
-                      {/* COLUMN 2: CLIENT */}
                       <td className="p-4">
                         <div className="font-bold text-gray-900">{book.client_name}</div>
-                        <div className="text-xs text-gray-500">{book.client_email}</div>
-                        <div className="text-xs text-gray-500">{book.client_phone}</div>
+                        <div className="text-sm text-gray-700">{book.client_email}</div>
+                        <div className="text-sm text-gray-700">{book.client_phone}</div>
                       </td>
-
-                      {/* COLUMN 3: PAKEJ (Data dari relation services) */}
                       <td className="p-4">
                         {book.services ? (
                             <div>
-                                <span className="bg-gray-100 text-gray-800 text-xs font-bold px-2 py-1 rounded border">
+                                <span className="bg-gray-100 text-gray-900 text-xs font-bold px-2 py-1 rounded border border-gray-300">
                                     {book.services.name}
                                 </span>
-                                <div className="text-xs text-gray-400 mt-1">{book.services.duration_minutes} minit</div>
+                                <div className="text-xs text-gray-600 mt-2 font-medium">{book.services.duration_minutes} minit</div>
                             </div>
                         ) : (
-                            <span className="text-red-500 text-xs">Pakej dah dipadam?</span>
+                            <span className="text-red-600 text-xs font-bold">Pakej dah dipadam?</span>
                         )}
                       </td>
-
-                      {/* COLUMN 4: STATUS */}
                       <td className="p-4">
                         {book.status === 'paid' ? (
-                            <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full border border-green-200">
+                            <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full border border-green-200">
                                 ✅ PAID
                             </span>
                         ) : (
-                            <span className="bg-yellow-100 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full border border-yellow-200">
+                            <span className="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full border border-yellow-200">
                                 ⏳ PENDING
                             </span>
                         )}
-                        <div className="text-[10px] text-gray-400 mt-1 truncate w-24" title={book.stripe_payment_id}>
+                        <div className="text-[11px] text-gray-500 mt-2 truncate w-28 font-mono" title={book.stripe_payment_id}>
                             Ref: {book.stripe_payment_id?.slice(-8)}
                         </div>
                       </td>
-
-                      {/* COLUMN 5: ACTION */}
                       <td className="p-4 text-center">
                         <a 
                             href={getWhatsappLink(book.client_phone, book.client_name, formatDate(book.booking_date), book.start_time)}
@@ -145,7 +133,6 @@ export default function AdminBookingsPage() {
                             📞
                         </a>
                       </td>
-
                     </tr>
                   ))}
                 </tbody>
