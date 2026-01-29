@@ -1,84 +1,76 @@
-// app/page.js
-"use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-export default function LandingPage() {
-  const [albumName, setAlbumName] = useState("");
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-
-  function handleSearch(e) {
-    e.preventDefault();
-    if (albumName.trim()) {
-      setLoading(true);
-      // Redirect user ke page gallery
-      router.push(`/gallery?client=${albumName.trim()}`);
-    }
-  }
-
+export default function Home() {
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden">
+    <div className="min-h-screen bg-white text-gray-900 flex flex-col">
       
-      {/* 1. BACKGROUND IMAGE (Ganti URL ni dengan gambar studio kau nanti) */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{ 
-            backgroundImage: "source/bg.jpeg",
-        }}
-      >
-        {/* Layer Hitam Nipis supaya tulisan jelas */}
-        <div className="absolute inset-0 bg-black/40"></div>
-      </div>
-
-      {/* 2. KONTEN UTAMA (Atas Background) */}
-      <div className="relative z-10 w-full max-w-md animate-fade-in-up">
-        
-        {/* Logo / Tajuk */}
-        <div className="text-center mb-8 text-white">
-          <h1 className="text-5xl font-bold tracking-widest mb-2 font-serif">
-            STUDIO ABG
-          </h1>
-          <p className="text-sm uppercase tracking-[0.3em] opacity-90">
-            Abadikan Kenangan Terindah
-          </p>
+      {/* --- 1. NAVBAR (Header) --- */}
+      <header className="w-full max-w-7xl mx-auto p-6 flex justify-between items-center">
+        {/* Kiri: Logo / Nama Studio */}
+        <div className="text-2xl font-black tracking-tighter">
+          STUDIO RAYA 📸
         </div>
 
-        {/* Kotak Carian (Glassmorphism) */}
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-2xl shadow-2xl">
-          <h2 className="text-white text-center text-lg font-medium mb-6">
-            Akses Album Anda
-          </h2>
-          
-          <form onSubmit={handleSearch} className="flex flex-col gap-4">
-            <input
-              type="text"
-              placeholder="Masukkan Kod Album (cth: keluarga-siti)"
-              className="w-full p-4 bg-white/80 border-0 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 text-gray-900 placeholder-gray-500 transition text-center font-bold"
-              value={albumName}
-              onChange={(e) => setAlbumName(e.target.value)}
-              required
-            />
-            
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-4 rounded-xl transition transform hover:scale-[1.02] shadow-lg disabled:opacity-70"
+        {/* Kanan: Butang Login Admin */}
+        <Link 
+          href="/admin" 
+          className="text-sm font-bold border border-gray-200 px-5 py-2 rounded-full hover:bg-black hover:text-white transition duration-300"
+        >
+          Admin Login 🔒
+        </Link>
+      </header>
+
+      {/* --- 2. HERO SECTION (Isi Tengah) --- */}
+      <main className="flex-grow flex flex-col items-center justify-center px-4 text-center mt-[-80px]"> 
+        {/* mt-[-80px] tu supaya dia naik atas sikit, balance secara visual */}
+
+        <span className="text-blue-600 font-bold tracking-widest uppercase text-xs mb-4">
+          Tempahan Raya 2026 Kini Dibuka
+        </span>
+
+        <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight max-w-4xl">
+          Abadikan Kenangan <br/> 
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+            Aidilfitri Anda
+          </span>
+        </h1>
+
+        <p className="text-lg md:text-xl text-gray-500 max-w-2xl mb-10 leading-relaxed">
+          Slot terhad! Dapatkan gambar raya kualiti studio profesional bersama keluarga tersayang. Siap pantas, harga berbaloi.
+        </p>
+
+        {/* Butang ke Booking Page */}
+        <div className="flex gap-4 flex-col sm:flex-row">
+            <Link 
+              href="/booking" 
+              className="bg-black text-white px-10 py-5 rounded-full text-xl font-bold shadow-xl hover:scale-105 hover:shadow-2xl transition transform duration-300 flex items-center justify-center gap-2"
             >
-              {loading ? "Sedang Mencari..." : "Lihat Gambar ➔"}
-            </button>
-          </form>
-
-          <p className="text-center text-white/60 text-xs mt-6">
-            *Perlukan bantuan? Hubungi kami.
-          </p>
+              Tempah Slot Sekarang 🗓️
+            </Link>
+            
+            {/* Butang Extra (Optional - contoh ke Gallery) */}
+            <Link 
+              href="/gallery" 
+              className="bg-white text-black border border-gray-200 px-10 py-5 rounded-full text-xl font-bold hover:bg-gray-50 transition"
+            >
+              Lihat Galeri
+            </Link>
         </div>
 
-        {/* Footer */}
-        <footer className="mt-12 text-center text-white/40 text-xs">
-          &copy; 2026 Studio ABG. Hak Cipta Terpelihara.
-        </footer>
-      </div>
+        {/* Social Proof (Hiasan Bawah) */}
+        <div className="mt-16 flex items-center gap-4 text-gray-400 text-sm">
+            <span>⭐️ 5.0 Rating</span>
+            <span>•</span>
+            <span>100+ Keluarga Berpuas Hati</span>
+        </div>
+
+      </main>
+
+      {/* --- FOOTER --- */}
+      <footer className="p-6 text-center text-gray-400 text-xs">
+        &copy; 2026 Studio Raya. All rights reserved.
+      </footer>
+
     </div>
   );
 }
