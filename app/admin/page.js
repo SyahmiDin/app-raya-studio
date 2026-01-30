@@ -184,6 +184,13 @@ export default function AdminPage() {
                  >
                    📅 List Booking
                  </Link>
+                 
+                 <Link 
+       href="/admin/promo" 
+       className="bg-green-600 text-white px-5 py-2 rounded-lg font-bold shadow hover:bg-green-700 transition flex items-center gap-2"
+     >
+       💰 Urus Promo
+     </Link>
 
                  {/* BUTANG LOGOUT */}
                  <button

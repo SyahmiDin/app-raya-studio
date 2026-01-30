@@ -1,135 +1,113 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react"; // Tambah Suspense
 import { supabase } from "@/lib/supabase";
-import { loadStripe } from "@stripe/stripe-js";
+import { useSearchParams } from "next/navigation"; // Tambah useSearchParams
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-
-export default function BookingPage() {
-  // --- STATE ---
+// KITA ASINGKAN CONTENT KE DALAM FUNCTION INI
+function BookingContent() {
+  const searchParams = useSearchParams();
+  
+  // State Sedia Ada
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
   const [slotList, setSlotList] = useState([]); 
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [loading, setLoading] = useState(true);
-  
   const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Helper: Tukar masa "14:30" ke minit (contoh: 870)
-  const timeToMinutes = (timeStr) => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return hours * 60 + minutes;
-  };
+  // State Referral
+  const [promoCode, setPromoCode] = useState("");
+  const [validReferral, setValidReferral] = useState(null);
+  const [promoMessage, setPromoMessage] = useState("");
 
-  // Helper: Tukar minit ke masa "14:30"
-  const minutesToTime = (totalMinutes) => {
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-  };
+  // Helpers
+  const timeToMinutes = (timeStr) => { const [h, m] = timeStr.split(':').map(Number); return h * 60 + m; };
+  const minutesToTime = (totalMinutes) => { const h = Math.floor(totalMinutes / 60); const m = totalMinutes % 60; return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`; };
+  const formatTimeDisplay = (time24) => { const [h, m] = time24.split(':'); const hr = parseInt(h); return `${hr % 12 || 12}:${m} ${hr >= 12 ? 'PM' : 'AM'}`; };
 
-  // --- 1. FETCH SERVICES ---
+  // --- 1. CHECK URL BILA PAGE LOAD (AUTO FILL) ---
+  useEffect(() => {
+    const refCode = searchParams.get("ref"); // Ambil ?ref=... dari URL
+    
+    if (refCode) {
+        setPromoCode(refCode); // Masukkan dalam input
+        handleCheckCode(refCode); // Terus check valid ke tak
+    }
+  }, [searchParams]);
+
+  // --- FETCH SERVICES ---
   useEffect(() => {
     async function fetchServices() {
       const { data } = await supabase.from('services').select('*').order('price');
-      if (data) {
-        setServices(data);
-        if (data.length > 0) setSelectedService(data[0]); 
-      }
+      if (data) { setServices(data); if (data.length > 0) setSelectedService(data[0]); }
       setLoading(false);
     }
     fetchServices();
   }, []);
 
-  // --- 2. GENERATE TIME SLOTS (COLLISION DETECTION) 🕒 ---
+  // --- GENERATE SLOTS ---
   useEffect(() => {
     if (!selectedService || !selectedDate) return;
-
     async function checkAvailability() {
-      setLoading(true);
-      setSelectedSlot(null);
-
-      const sessions = [
-        { name: "Pagi", start: "10:00", end: "13:00" },
-        { name: "Petang", start: "14:00", end: "18:00" },
-        { name: "Malam", start: "20:00", end: "23:00" }
-      ];
-
-      // A. Ambil booking sedia ada BESERTA duration pakej mereka
-      const { data: existingBookings } = await supabase
-        .from('bookings')
-        .select(`
-            start_time,
-            services ( duration_minutes )
-        `)
-        .eq('booking_date', selectedDate)
-        .eq('status', 'paid');
-
-      // B. Proses booking sedia ada jadi format "Range Minit" (Start - End)
-      const blockedRanges = existingBookings?.map(booking => {
-         const startMin = timeToMinutes(booking.start_time.slice(0, 5));
-         
-         // Kira duration sistem untuk booking tersebut (Logic Buffer sama macam dulu)
-         let duration = booking.services.duration_minutes + 5;
-         
-         return {
-             start: startMin,
-             end: startMin + duration 
-         };
+      setLoading(true); setSelectedSlot(null);
+      const sessions = [{ name: "Pagi", start: "10:00", end: "12:30" }, { name: "Petang", start: "14:00", end: "17:30" }, { name: "Malam", start: "20:00", end: "22:30" }];
+      
+      const { data: existingBookings } = await supabase.from('bookings').select(`start_time, services ( duration_minutes )`).eq('booking_date', selectedDate).eq('status', 'paid');
+      const blockedRanges = existingBookings?.map(b => { 
+         const start = timeToMinutes(b.start_time.slice(0, 5)); 
+         return { start, end: start + b.services.duration_minutes + 5 }; 
       }) || [];
 
-      // C. Tentukan Tempoh Sistem untuk Pakej YANG SEDANG DIPILIH Client
       let currentServiceDuration = selectedService.duration_minutes + 5;
-
-      // D. Generate Slot & Check Collision
       let slots = [];
 
       sessions.forEach(session => {
         let currentMin = timeToMinutes(session.start);
         const endMin = timeToMinutes(session.end);
-
-        // Loop selagi slot tak melebihi waktu sesi
         while (currentMin + currentServiceDuration <= endMin) {
-            
             const timeString = minutesToTime(currentMin);
-            
-            // LOGIK BARU: Check Bertembung (Collision) 💥
-            // Slot dikira "Booked" jika masa dia bertindih dengan mana-mana blockedRanges
-            const myStart = currentMin;
-            const myEnd = currentMin + currentServiceDuration;
-
-            const isOverlap = blockedRanges.some(range => {
-                // Formula Bertembung: (StartA < EndB) && (EndA > StartB)
-                return myStart < range.end && myEnd > range.start;
-            });
-
-            slots.push({
-                time: timeString,
-                booked: isOverlap // True jika bertembung
-            });
-
-            // Lompat ke slot seterusnya
+            const myStart = currentMin; const myEnd = currentMin + currentServiceDuration;
+            const isOverlap = blockedRanges.some(r => myStart < r.end && myEnd > r.start);
+            slots.push({ time: timeString, booked: isOverlap });
             currentMin += currentServiceDuration;
         }
       });
-
-      setSlotList(slots);
-      setLoading(false);
+      setSlotList(slots); setLoading(false);
     }
-
     checkAvailability();
   }, [selectedDate, selectedService]);
 
+  // --- CHECK KOD ---
+  // Kita ubah sikit supaya boleh terima 'codeToCheck' (pilihan)
+  const handleCheckCode = async (codeToCheck = null) => {
+    // Kalau function dipanggil tanpa parameter (dari butang), guna state promoCode
+    // Kalau dipanggil dari URL (auto), guna codeToCheck
+    const finalCode = (typeof codeToCheck === 'string' ? codeToCheck : promoCode).toUpperCase();
 
-  // --- 3. HANDLE PAYMENT (UPDATED) ---
+    if (!finalCode) return;
+    setPromoMessage("Checking...");
+    
+    const { data } = await supabase
+        .from('referral_codes')
+        .select('*')
+        .eq('code', finalCode)
+        .eq('is_active', true)
+        .single();
+
+    if (data) {
+        setValidReferral(data.code);
+        setPromoMessage(`✅ Kod sah! (Support: ${data.staff_name})`);
+    } else {
+        setValidReferral(null);
+        setPromoMessage("❌ Kod tidak dijumpai.");
+    }
+  };
+
   const handleCheckout = async (e) => {
     e.preventDefault();
-    if (!selectedSlot || !formData.name || !formData.phone) {
-        alert("Sila lengkapkan semua maklumat.");
-        return;
-    }
+    if (!selectedSlot || !formData.name || !formData.phone) return alert("Lengkapkan maklumat!");
     setIsProcessing(true);
 
     try {
@@ -140,34 +118,14 @@ export default function BookingPage() {
                 service: selectedService,
                 date: selectedDate,
                 time: selectedSlot,
-                client: formData
+                client: formData,
+                referralCode: validReferral
             }),
         });
-
         const data = await response.json();
-
-        // LOGIK BARU: Redirect terus guna URL dari backend
-        if (data.url) {
-            window.location.href = data.url; 
-        } else {
-            console.error("Tiada URL diterima:", data);
-            alert("Ralat sistem pembayaran. Sila cuba sebentar lagi.");
-            setIsProcessing(false);
-        }
-
-    } catch (err) {
-        console.error("Payment Error:", err);
-        alert("Gagal memproses pembayaran. Sila cuba lagi.");
-        setIsProcessing(false);
-    }
-  };
-
-  const formatTimeDisplay = (time24) => {
-    const [hour, min] = time24.split(':');
-    const h = parseInt(hour);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${h12}:${min} ${ampm}`;
+        if (data.url) window.location.href = data.url; 
+        else { alert("Error payment"); setIsProcessing(false); }
+    } catch (err) { alert("System Error"); setIsProcessing(false); }
   };
 
   if (loading && services.length === 0) return <div className="text-center p-10">Loading...</div>;
@@ -175,114 +133,60 @@ export default function BookingPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-black text-white p-6 text-center"><h1 className="text-3xl font-bold">Tempah Studio Raya</h1></div>
         
-        {/* Header */}
-        <div className="bg-black text-white p-6 text-center">
-            <h1 className="text-3xl font-bold">Tempah Studio Raya</h1>
-            <p className="text-gray-400">Pilih pakej dan slot masa anda</p>
-        </div>
+        <div className="p-6 md:p-10 space-y-8">
+            <div><h3 className="font-bold border-b text-gray-900 pb-2 mb-4">1. Pilih Pakej</h3><div className="grid md:grid-cols-3 gap-4 text-gray-900">{services.map(s => (<div key={s.id} onClick={()=>{setSelectedService(s);setSelectedSlot(null);}} className={`cursor-pointer border-2 p-4 rounded-xl ${selectedService?.id===s.id?'border-blue-600 bg-blue-50':'border-gray-200'}`}><h4>{s.name}</h4><div className="text-2xl font-black text-blue-600 my-2">RM{s.price}</div><p className="text-xs text-gray-500">{s.duration_minutes} Minit</p></div>))}</div></div>
+            <div><h3 className="font-bold border-b pb-2 mb-4 text-gray-900">2. Pilih Tarikh</h3><input type="date" value={selectedDate} min={new Date().toISOString().split('T')[0]} onChange={e=>setSelectedDate(e.target.value)} className="w-full md:w-1/2 p-3 border rounded-lg"/></div>
+            {selectedDate && <div><h3 className="font-bold border-b pb-2 mb-4 text-gray-900">3. Pilih Masa</h3><div className="grid grid-cols-4 gap-2 text-gray-900">{slotList.map((s,i)=>(<button key={i} disabled={s.booked} onClick={()=>setSelectedSlot(s.time)} className={`p-2 text-sm rounded border ${s.booked?'opacity-50 line-through bg-gray-100':selectedSlot===s.time?'bg-black text-white':'bg-white hover:bg-gray-100'}`}>{formatTimeDisplay(s.time)}</button>))}</div></div>}
 
-        <div className="p-6 md:p-10">
-            
-            {/* STEP 1: PILIH PAKEJ */}
-            <h3 className="font-bold text-gray-800 mb-4 text-lg border-b pb-2">1. Pilih Pakej</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                {services.map(service => (
-                    <div 
-                        key={service.id}
-                        onClick={() => { setSelectedService(service); setSelectedSlot(null); }}
-                        className={`cursor-pointer border-2 rounded-xl p-4 transition hover:shadow-md ${selectedService?.id === service.id ? 'border-blue-600 bg-blue-50' : 'border-gray-200'}`}
-                    >
-                        <h4 className="font-bold text-gray-800">{service.name}</h4>
-                        <div className="text-2xl font-black text-blue-600 my-2">RM{service.price}</div>
-                        <p className="text-xs text-gray-500">⏱️ {service.duration_minutes} Minit</p>
-                        <p className="text-xs text-gray-500 mt-1">{service.description}</p>
-                    </div>
-                ))}
-            </div>
-
-            {/* STEP 2: PILIH TARIKH */}
-            <h3 className="font-bold text-gray-800 mb-4 text-lg border-b pb-2">2. Pilih Tarikh</h3>
-            <div className="mb-8">
-                <input 
-                    type="date" 
-                    value={selectedDate}
-                    min={new Date().toISOString().split('T')[0]} 
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
-                />
-            </div>
-
-            {/* STEP 3: PILIH MASA */}
-            {selectedDate && (
-                <div className="mb-8 animate-fade-in">
-                    <h3 className="font-bold text-gray-800 mb-4 text-lg border-b pb-2">3. Pilih Masa</h3>
-                    
-                    {loading ? (
-                        <div className="text-gray-500 animate-pulse">Sedang semak kekosongan... ⏳</div>
-                    ) : (
-                        <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-                            {slotList.map((slotObj, index) => (
-                                <button
-                                    key={index}
-                                    disabled={slotObj.booked} 
-                                    onClick={() => setSelectedSlot(slotObj.time)}
-                                    className={`
-                                        py-2 px-1 rounded-lg text-sm font-bold transition border
-                                        ${slotObj.booked 
-                                            ? 'bg-gray-100 text-gray-300 border-gray-100 cursor-not-allowed line-through' 
-                                            : selectedSlot === slotObj.time 
-                                                ? 'bg-black text-white border-black shadow-lg transform scale-105' 
-                                                : 'bg-white text-gray-700 border-gray-200 hover:border-black hover:bg-gray-50' 
-                                        }
-                                    `}
-                                >
-                                    {formatTimeDisplay(slotObj.time)}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                    {slotList.length === 0 && !loading && (
-                        <div className="text-red-500 text-sm mt-2">Tiada slot langsung (Mungkin hari cuti).</div>
-                    )}
-                </div>
-            )}
-
-            {/* STEP 4: BUTIRAN */}
             {selectedSlot && (
-                <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 animate-fade-in-up">
-                    <h3 className="font-bold text-gray-800 mb-4 text-lg">4. Butiran Anda</h3>
+                <div className="bg-gray-50 p-6 rounded-xl border animate-fade-in-up">
+                    <h3 className="font-bold text-gray-800 mb-4 text-lg">4. Butiran & Pembayaran</h3>
+                    
+                    <div className="mb-6 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Kod Referral Staff (Jika Ada)</label>
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                value={promoCode}
+                                onChange={(e) => setPromoCode(e.target.value)}
+                                placeholder="Contoh: STAFF01"
+                                className="flex-1 p-2 border border-gray-300 rounded uppercase"
+                            />
+                            {/* Butang check biasa */}
+                            <button onClick={() => handleCheckCode()} type="button" className="bg-gray-800 text-white px-4 rounded font-bold text-sm hover:bg-gray-700">Check</button>
+                        </div>
+                        {promoMessage && <p className={`text-xs mt-1 font-bold ${validReferral ? 'text-green-600' : 'text-red-500'}`}>{promoMessage}</p>}
+                    </div>
+
                     <form onSubmit={handleCheckout} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Penuh</label>
-                                <input type="text" required className="w-full p-3 border rounded-lg" onChange={e => setFormData({...formData, name: e.target.value})} />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">No. WhatsApp</label>
-                                <input type="tel" required className="w-full p-3 border rounded-lg" onChange={e => setFormData({...formData, phone: e.target.value})} />
-                            </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <input type="text" placeholder="Nama Penuh" required className="p-3 border rounded-lg w-full" onChange={e=>setFormData({...formData,name:e.target.value})}/>
+                            <input type="tel" placeholder="No. WhatsApp" required className="p-3 border rounded-lg w-full" onChange={e=>setFormData({...formData,phone:e.target.value})}/>
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
-                            <input type="email" required className="w-full p-3 border rounded-lg" onChange={e => setFormData({...formData, email: e.target.value})} />
-                        </div>
+                        <input type="email" placeholder="Email" required className="p-3 border rounded-lg w-full" onChange={e=>setFormData({...formData,email:e.target.value})}/>
 
                         <div className="pt-4">
-                            <button 
-                                type="submit" 
-                                disabled={isProcessing}
-                                className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition disabled:opacity-50"
-                            >
-                                {isProcessing ? 'Sedang Proses...' : `BAYAR RM${selectedService.price} & CONFIRM 🔒`}
+                            <button type="submit" disabled={isProcessing} className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition flex justify-between px-6 items-center disabled:opacity-50">
+                                <span>BAYAR SEKARANG 🔒</span>
+                                <span className="text-xl">RM{selectedService.price}</span>
                             </button>
                         </div>
                     </form>
                 </div>
             )}
-
         </div>
       </div>
     </div>
   );
+}
+
+// COMPONENT UTAMA (WRAPPER)
+export default function BookingPage() {
+    return (
+        <Suspense fallback={<div className="text-center p-20">Loading Booking System...</div>}>
+            <BookingContent />
+        </Suspense>
+    );
 }

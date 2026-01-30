@@ -36,7 +36,10 @@ function SuccessContent() {
             client_phone: info.client_phone,
             service_id: info.service_id,
             status: 'paid',
-            stripe_payment_id: sessionId
+            stripe_payment_id: sessionId,
+
+            referral_code: info.referral_code || null, // Simpan kod kalau ada
+            final_price: info.final_price_paid       // Simpan harga sebenar dia bayar
         }]);
 
         if (error) {
