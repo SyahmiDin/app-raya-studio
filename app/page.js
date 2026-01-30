@@ -60,7 +60,7 @@ export default function Home() {
           onClick={() => setIsLoginOpen(true)} 
           className="bg-white/10 hover:bg-white/30 backdrop-blur-md border border-white/20 px-6 py-2 rounded-full text-sm font-semibold transition cursor-pointer"
         >
-          Admin Login 🔒
+          Admin 🔒
         </button>
       </nav>
 

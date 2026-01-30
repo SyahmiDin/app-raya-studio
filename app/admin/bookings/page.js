@@ -1,4 +1,3 @@
-// app/admin/bookings/page.js
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -14,7 +13,6 @@ export default function AdminBookingsPage() {
   async function fetchBookings() {
     setLoading(true);
     
-    // Safety check: Kalau supabase tak connect (sebab key palsu masa build), stop sini
     if (!supabase) return;
 
     const { data, error } = await supabase
@@ -23,16 +21,37 @@ export default function AdminBookingsPage() {
         *,
         services ( name, duration_minutes )
       `)
-      .order('booking_date', { ascending: false })
+      .order('booking_date', { ascending: false }) // Tarikh terkini di atas
       .order('start_time', { ascending: true });
 
     if (error) {
       console.error("Error fetching bookings:", error);
-      // Tak perlu alert masa build/server render
     } else {
       setBookings(data || []);
     }
     setLoading(false);
+  }
+
+  // --- FUNGSI DELETE BARU ---
+  async function handleDelete(id, clientName) {
+    // 1. Tanya confirmation dulu (Safety)
+    const isConfirmed = confirm(`Adakah anda pasti nak batalkan booking untuk ${clientName}?`);
+    
+    if (!isConfirmed) return;
+
+    // 2. Delete dari database
+    const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        alert("Gagal memadam booking.");
+        console.error(error);
+    } else {
+        alert("Booking berjaya dipadam. 🗑️");
+        fetchBookings(); // Refresh list automatik
+    }
   }
 
   const getWhatsappLink = (phone, name, date, time) => {
@@ -79,7 +98,7 @@ export default function AdminBookingsPage() {
                   <tr className="bg-gray-100 text-gray-800 uppercase text-xs tracking-wider font-bold">
                     <th className="p-4 border-b border-gray-200">Tarikh & Masa</th>
                     <th className="p-4 border-b border-gray-200">Client</th>
-                    <th className="p-4 border-b border-gray-200">Pakej (Service)</th>
+                    <th className="p-4 border-b border-gray-200">Pakej</th>
                     <th className="p-4 border-b border-gray-200">Status</th>
                     <th className="p-4 border-b border-gray-200 text-center">Tindakan</th>
                   </tr>
@@ -102,10 +121,9 @@ export default function AdminBookingsPage() {
                                 <span className="bg-gray-100 text-gray-900 text-xs font-bold px-2 py-1 rounded border border-gray-300">
                                     {book.services.name}
                                 </span>
-                                <div className="text-xs text-gray-600 mt-2 font-medium">{book.services.duration_minutes} minit</div>
                             </div>
                         ) : (
-                            <span className="text-red-600 text-xs font-bold">Pakej dah dipadam?</span>
+                            <span className="text-red-600 text-xs font-bold">Deleted Service</span>
                         )}
                       </td>
                       <td className="p-4">
@@ -118,11 +136,9 @@ export default function AdminBookingsPage() {
                                 ⏳ PENDING
                             </span>
                         )}
-                        <div className="text-[11px] text-gray-500 mt-2 truncate w-28 font-mono" title={book.stripe_payment_id}>
-                            Ref: {book.stripe_payment_id?.slice(-8)}
-                        </div>
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-4 flex justify-center gap-2">
+                        {/* WhatsApp Button */}
                         <a 
                             href={getWhatsappLink(book.client_phone, book.client_name, formatDate(book.booking_date), book.start_time)}
                             target="_blank"
@@ -132,6 +148,15 @@ export default function AdminBookingsPage() {
                         >
                             📞
                         </a>
+
+                        {/* DELETE Button (Baru) */}
+                        <button 
+                            onClick={() => handleDelete(book.id, book.client_name)}
+                            className="inline-flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 rounded-full hover:bg-red-600 hover:text-white border border-red-200 shadow-sm transition transform hover:scale-110"
+                            title="Padam Booking"
+                        >
+                            🗑️
+                        </button>
                       </td>
                     </tr>
                   ))}

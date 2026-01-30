@@ -1,251 +1,252 @@
-// app/booking/page.js
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { loadStripe } from "@stripe/stripe-js";
+
+// Load Stripe
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 export default function BookingPage() {
+  // --- STATE ---
   const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Selection
   const [selectedService, setSelectedService] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState(null);
+  const [slotList, setSlotList] = useState([]); // Nama variable baru supaya jelas
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [loading, setLoading] = useState(true);
   
-  // Client Form (BARU)
-  const [clientData, setClientData] = useState({ name: "", email: "", phone: "" });
-  const [isProcessing, setIsProcessing] = useState(false); // Loading masa tekan bayar
+  // Form Details
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Logic
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [checkingSlots, setCheckingSlots] = useState(false);
-
-  // 1. Fetch Pakej
+  // --- 1. FETCH SERVICES ---
   useEffect(() => {
     async function fetchServices() {
       const { data } = await supabase.from('services').select('*').order('price');
-      if (data) setServices(data);
+      if (data) {
+        setServices(data);
+        if (data.length > 0) setSelectedService(data[0]); 
+      }
       setLoading(false);
     }
     fetchServices();
   }, []);
 
-  // 2. Generate Slot Masa
+  // --- 2. GENERATE TIME SLOTS (SHOW BOOKED AS DISABLED) 🕒 ---
   useEffect(() => {
     if (!selectedService || !selectedDate) return;
 
-    async function generateSlots() {
-      setCheckingSlots(true);
-      setAvailableSlots([]);
-      setSelectedTime(null);
+    async function checkAvailability() {
+      setLoading(true);
+      // Reset pilihan slot bila tukar tarikh/pakej
+      setSelectedSlot(null);
 
+      // A. Setup Sesi Waktu
+      const sessions = [
+        { name: "Pagi", start: "10:00", end: "12:30" },
+        { name: "Petang", start: "14:00", end: "17:30" },
+        { name: "Malam", start: "20:00", end: "22:30" }
+      ];
+
+      // B. Ambil booking sedia ada (Status: Paid)
       const { data: existingBookings } = await supabase
         .from('bookings')
         .select('start_time')
-        .eq('booking_date', selectedDate);
+        .eq('booking_date', selectedDate)
+        .eq('status', 'paid');
 
-      const takenTimes = existingBookings?.map(b => b.start_time.slice(0, 5)) || [];
+      const bookedTimes = existingBookings?.map(b => b.start_time.slice(0, 5)) || [];
 
+      // C. Tentukan Tempoh Sistem (System Duration + Buffer)
+      // Small/Medium (15m) -> +5m = 20m
+      // Large (25m) -> +5m = 30m
+      let systemDuration = selectedService.duration_minutes + 5;
+
+      // D. Generate Slot
       let slots = [];
-      let currentTime = 9 * 60; // 9:00 AM
-      const endTime = 18 * 60;  // 6:00 PM
 
-      while (currentTime + selectedService.duration_minutes <= endTime) {
-        const hours = Math.floor(currentTime / 60);
-        const mins = currentTime % 60;
-        const timeString = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-        const isTaken = takenTimes.includes(timeString);
-        slots.push({ time: timeString, available: !isTaken });
-        currentTime += selectedService.duration_minutes;
-      }
-      setAvailableSlots(slots);
-      setCheckingSlots(false);
+      sessions.forEach(session => {
+        let currentTime = new Date(`${selectedDate}T${session.start}:00`);
+        const endTime = new Date(`${selectedDate}T${session.end}:00`);
+
+        while (currentTime.getTime() + systemDuration * 60000 <= endTime.getTime()) {
+            
+            const timeString = currentTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            
+            // LOGIK BARU: 
+            // Kita tak skip, tapi kita tanda status dia
+            const isBooked = bookedTimes.includes(timeString);
+
+            slots.push({
+                time: timeString,
+                booked: isBooked // True kalau dah ada orang
+            });
+
+            // Lompat ke slot seterusnya
+            currentTime = new Date(currentTime.getTime() + systemDuration * 60000);
+        }
+      });
+
+      setSlotList(slots);
+      setLoading(false);
     }
-    generateSlots();
+
+    checkAvailability();
   }, [selectedDate, selectedService]);
 
-  // --- FUNCTION BAYAR (BARU) 🚀 ---
-  async function handlePayment() {
-    if (!clientData.name || !clientData.email || !clientData.phone) {
-        alert("Sila isi maklumat diri anda lengkap.");
+
+  // --- 3. HANDLE PAYMENT ---
+  const handleCheckout = async (e) => {
+    e.preventDefault();
+    if (!selectedSlot || !formData.name || !formData.phone) {
+        alert("Sila lengkapkan semua maklumat.");
         return;
     }
-
     setIsProcessing(true);
 
     try {
-        // Panggil API Stripe yang kita baru buat
-        const res = await fetch("/api/checkout", {
+        const response = await fetch("/api/checkout", {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 service: selectedService,
                 date: selectedDate,
-                time: selectedTime,
-                client: clientData
-            })
+                time: selectedSlot, // selectedSlot cuma pegang string masa (cth: "10:00")
+                client: formData
+            }),
         });
 
-        const data = await res.json();
-
-        if (data.url) {
-            // Redirect user ke page Stripe
-            window.location.href = data.url;
-        } else {
-            alert("Gagal sambung ke bank.");
-            setIsProcessing(false);
-        }
+        const { id } = await response.json();
+        const stripe = await stripePromise;
+        await stripe.redirectToCheckout({ sessionId: id });
 
     } catch (err) {
-        console.error(err);
-        alert("Ada masalah teknikal.");
+        console.error("Payment Error:", err);
+        alert("Gagal memproses pembayaran. Sila cuba lagi.");
         setIsProcessing(false);
     }
-  }
-
-  // UI Components
-  const resetSelection = () => {
-    setSelectedService(null);
-    setSelectedDate("");
-    setSelectedTime(null);
   };
 
+  const formatTimeDisplay = (time24) => {
+    const [hour, min] = time24.split(':');
+    const h = parseInt(hour);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${min} ${ampm}`;
+  };
+
+  if (loading && services.length === 0) return <div className="text-center p-10">Loading...</div>;
+
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-extrabold text-gray-900">Tempah Studio Raya</h1>
-          {selectedService && (
-             <button onClick={resetSelection} className="text-sm text-blue-600 hover:underline mt-2">← Tukar Pakej</button>
-          )}
+    <div className="min-h-screen bg-gray-50 py-10 px-4">
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        
+        {/* Header */}
+        <div className="bg-black text-white p-6 text-center">
+            <h1 className="text-3xl font-bold">Tempah Studio Raya</h1>
+            <p className="text-gray-400">Pilih pakej dan slot masa anda</p>
         </div>
 
-        {!selectedService ? (
-           loading ? <div className="text-center animate-pulse">Loading...</div> : (
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               {services.map((service) => (
-                 <div key={service.id} className="bg-white rounded-2xl shadow border p-6 hover:shadow-lg transition">
-                   <h3 className="font-bold text-gray-900 text-xl">{service.name}</h3>
-                   <p className="text-3xl font-black text-blue-600 my-2">RM{service.price}</p>
-                   <p className="text-sm text-gray-500 mb-4">{service.duration_minutes} Minit Sesi</p>
-                   <button onClick={() => setSelectedService(service)} className="w-full bg-black text-white py-3 rounded-lg font-bold">Pilih</button>
-                 </div>
-               ))}
-             </div>
-           )
-        ) : (
-          <div className="bg-white rounded-2xl shadow-xl border overflow-hidden flex flex-col md:flex-row">
-             {/* KIRI: Info */}
-             <div className="bg-gray-900 text-white p-8 md:w-1/3 flex flex-col justify-between">
-                <div>
-                    <h3 className="text-gray-400 text-xs uppercase tracking-widest mb-2">Pakej Pilihan</h3>
-                    <h2 className="text-2xl font-bold mb-4">{selectedService.name}</h2>
-                    <div className="space-y-4 text-sm text-gray-300">
-                        <p>💰 Harga: <span className="text-white font-bold">RM{selectedService.price}</span></p>
-                        <p>⏱️ Durasi: <span className="text-white font-bold">{selectedService.duration_minutes} Minit</span></p>
+        <div className="p-6 md:p-10">
+            
+            {/* STEP 1: PILIH PAKEJ */}
+            <h3 className="font-bold text-gray-800 mb-4 text-lg border-b pb-2">1. Pilih Pakej</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                {services.map(service => (
+                    <div 
+                        key={service.id}
+                        onClick={() => { setSelectedService(service); setSelectedSlot(null); }}
+                        className={`cursor-pointer border-2 rounded-xl p-4 transition hover:shadow-md ${selectedService?.id === service.id ? 'border-blue-600 bg-blue-50' : 'border-gray-200'}`}
+                    >
+                        <h4 className="font-bold text-gray-800">{service.name}</h4>
+                        <div className="text-2xl font-black text-blue-600 my-2">RM{service.price}</div>
+                        <p className="text-xs text-gray-500">⏱️ {service.duration_minutes} Minit</p>
+                        <p className="text-xs text-gray-500 mt-1">{service.description}</p>
                     </div>
+                ))}
+            </div>
+
+            {/* STEP 2: PILIH TARIKH */}
+            <h3 className="font-bold text-gray-800 mb-4 text-lg border-b pb-2">2. Pilih Tarikh</h3>
+            <div className="mb-8">
+                <input 
+                    type="date" 
+                    value={selectedDate}
+                    min={new Date().toISOString().split('T')[0]} 
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-black"
+                />
+            </div>
+
+            {/* STEP 3: PILIH MASA */}
+            {selectedDate && (
+                <div className="mb-8 animate-fade-in">
+                    <h3 className="font-bold text-gray-800 mb-4 text-lg border-b pb-2">3. Pilih Masa</h3>
+                    
+                    {loading ? (
+                        <div className="text-gray-500 animate-pulse">Sedang semak kekosongan... ⏳</div>
+                    ) : (
+                        <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                            {slotList.map((slotObj, index) => (
+                                <button
+                                    key={index}
+                                    disabled={slotObj.booked} // Matikan butang kalau booked
+                                    onClick={() => setSelectedSlot(slotObj.time)}
+                                    className={`
+                                        py-2 px-1 rounded-lg text-sm font-bold transition border
+                                        ${slotObj.booked 
+                                            ? 'bg-gray-100 text-gray-300 border-gray-100 cursor-not-allowed line-through' // Style kalau Booked (Pudar)
+                                            : selectedSlot === slotObj.time 
+                                                ? 'bg-black text-white border-black shadow-lg transform scale-105' // Style kalau Selected
+                                                : 'bg-white text-gray-700 border-gray-200 hover:border-black hover:bg-gray-50' // Style kalau Available
+                                        }
+                                    `}
+                                >
+                                    {formatTimeDisplay(slotObj.time)}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                    {slotList.length === 0 && !loading && (
+                        <div className="text-red-500 text-sm mt-2">Tiada slot langsung (Mungkin hari cuti).</div>
+                    )}
                 </div>
-                {selectedDate && selectedTime && (
-                    <div className="mt-8 pt-8 border-t border-gray-700">
-                        <p className="text-xs text-gray-500">Slot Pilihan:</p>
-                        <p className="text-xl font-bold">{selectedDate}</p>
-                        <p className="text-2xl font-bold text-green-400">{selectedTime}</p>
-                    </div>
-                )}
-             </div>
+            )}
 
-             {/* KANAN: Form */}
-             <div className="p-8 md:w-2/3">
-                <div className="mb-8">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Pilih Tarikh</label>
-                    <input 
-                      type="date" 
-                      min={new Date().toISOString().split("T")[0]}
-                      className="w-full p-4 border rounded-xl text-lg font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                    />
-                </div>
-
-                {selectedDate && (
-                    <div className="mb-8">
-                        <label className="block text-sm font-bold text-gray-700 mb-3">Pilih Masa Kosong</label>
-                        {checkingSlots ? (
-                            <div className="text-gray-500 animate-pulse">Semak kekosongan...</div>
-                        ) : (
-                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                                {availableSlots.map((slot, i) => (
-                                    <button
-                                        key={i}
-                                        disabled={!slot.available}
-                                        onClick={() => setSelectedTime(slot.time)}
-                                        className={`py-3 rounded-lg font-bold text-sm transition ${
-                                            !slot.available ? "bg-gray-100 text-gray-300 cursor-not-allowed" : 
-                                            selectedTime === slot.time ? "bg-blue-600 text-white shadow-lg transform scale-105" : "bg-white border hover:border-black text-gray-800"
-                                        }`}
-                                    >
-                                        {slot.time}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* FORM MAKLUMAT DIRI (BARU) */}
-                {selectedTime && (
-                    <div className="animate-fade-in-up border-t pt-8 mt-8">
-                        <h3 className="font-bold text-gray-800 text-lg mb-4">Maklumat Anda</h3>
-                        <div className="space-y-4">
+            {/* STEP 4: BUTIRAN */}
+            {selectedSlot && (
+                <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 animate-fade-in-up">
+                    <h3 className="font-bold text-gray-800 mb-4 text-lg">4. Butiran Anda</h3>
+                    <form onSubmit={handleCheckout} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-xs font-bold text-gray-500">Nama Penuh</label>
-                                <input 
-                                    type="text" 
-                                    className="w-full p-3 border rounded-lg" 
-                                    placeholder="Cth: Ali bin Abu"
-                                    value={clientData.name}
-                                    onChange={(e) => setClientData({...clientData, name: e.target.value})}
-                                />
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Penuh</label>
+                                <input type="text" required className="w-full p-3 border rounded-lg" onChange={e => setFormData({...formData, name: e.target.value})} />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-xs font-bold text-gray-500">Email</label>
-                                    <input 
-                                        type="email" 
-                                        className="w-full p-3 border rounded-lg" 
-                                        placeholder="ali@gmail.com"
-                                        value={clientData.email}
-                                        onChange={(e) => setClientData({...clientData, email: e.target.value})}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-bold text-gray-500">No. Telefon</label>
-                                    <input 
-                                        type="tel" 
-                                        className="w-full p-3 border rounded-lg" 
-                                        placeholder="012-3456789"
-                                        value={clientData.phone}
-                                        onChange={(e) => setClientData({...clientData, phone: e.target.value})}
-                                    />
-                                </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">No. WhatsApp</label>
+                                <input type="tel" required className="w-full p-3 border rounded-lg" onChange={e => setFormData({...formData, phone: e.target.value})} />
                             </div>
                         </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
+                            <input type="email" required className="w-full p-3 border rounded-lg" onChange={e => setFormData({...formData, email: e.target.value})} />
+                        </div>
 
-                        {/* BUTANG BAYAR */}
-                        <div className="mt-8 text-right">
+                        <div className="pt-4">
                             <button 
-                                onClick={handlePayment}
+                                type="submit" 
                                 disabled={isProcessing}
-                                className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg disabled:opacity-50 shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2"
+                                className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition disabled:opacity-50"
                             >
-                                {isProcessing ? "Sedang Proses..." : `Bayar RM${selectedService.price} →`}
+                                {isProcessing ? 'Sedang Proses...' : `BAYAR RM${selectedService.price} & CONFIRM 🔒`}
                             </button>
-                            <p className="text-xs text-gray-400 mt-2 text-center sm:text-right">Pembayaran selamat melalui Stripe 🔒</p>
                         </div>
-                    </div>
-                )}
+                    </form>
+                </div>
+            )}
 
-             </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
