@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { loadStripe } from "@stripe/stripe-js";
 
-// Load Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 export default function BookingPage() {
@@ -11,13 +10,25 @@ export default function BookingPage() {
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
-  const [slotList, setSlotList] = useState([]); // Nama variable baru supaya jelas
+  const [slotList, setSlotList] = useState([]); 
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // Form Details
   const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Helper: Tukar masa "14:30" ke minit (contoh: 870)
+  const timeToMinutes = (timeStr) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Helper: Tukar minit ke masa "14:30"
+  const minutesToTime = (totalMinutes) => {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  };
 
   // --- 1. FETCH SERVICES ---
   useEffect(() => {
@@ -32,58 +43,75 @@ export default function BookingPage() {
     fetchServices();
   }, []);
 
-  // --- 2. GENERATE TIME SLOTS (SHOW BOOKED AS DISABLED) 🕒 ---
+  // --- 2. GENERATE TIME SLOTS (COLLISION DETECTION) 🕒 ---
   useEffect(() => {
     if (!selectedService || !selectedDate) return;
 
     async function checkAvailability() {
       setLoading(true);
-      // Reset pilihan slot bila tukar tarikh/pakej
       setSelectedSlot(null);
 
-      // A. Setup Sesi Waktu
       const sessions = [
-        { name: "Pagi", start: "10:00", end: "12:30" },
-        { name: "Petang", start: "14:00", end: "17:30" },
-        { name: "Malam", start: "20:00", end: "22:30" }
+        { name: "Pagi", start: "10:00", end: "13:00" },
+        { name: "Petang", start: "14:00", end: "18:00" },
+        { name: "Malam", start: "20:00", end: "23:00" }
       ];
 
-      // B. Ambil booking sedia ada (Status: Paid)
+      // A. Ambil booking sedia ada BESERTA duration pakej mereka
       const { data: existingBookings } = await supabase
         .from('bookings')
-        .select('start_time')
+        .select(`
+            start_time,
+            services ( duration_minutes )
+        `)
         .eq('booking_date', selectedDate)
         .eq('status', 'paid');
 
-      const bookedTimes = existingBookings?.map(b => b.start_time.slice(0, 5)) || [];
+      // B. Proses booking sedia ada jadi format "Range Minit" (Start - End)
+      const blockedRanges = existingBookings?.map(booking => {
+         const startMin = timeToMinutes(booking.start_time.slice(0, 5));
+         
+         // Kira duration sistem untuk booking tersebut (Logic Buffer sama macam dulu)
+         let duration = booking.services.duration_minutes + 5;
+         
+         return {
+             start: startMin,
+             end: startMin + duration 
+         };
+      }) || [];
 
-      // C. Tentukan Tempoh Sistem (System Duration + Buffer)
-      // Small/Medium (15m) -> +5m = 20m
-      // Large (25m) -> +5m = 30m
-      let systemDuration = selectedService.duration_minutes + 5;
+      // C. Tentukan Tempoh Sistem untuk Pakej YANG SEDANG DIPILIH Client
+      let currentServiceDuration = selectedService.duration_minutes + 5;
 
-      // D. Generate Slot
+      // D. Generate Slot & Check Collision
       let slots = [];
 
       sessions.forEach(session => {
-        let currentTime = new Date(`${selectedDate}T${session.start}:00`);
-        const endTime = new Date(`${selectedDate}T${session.end}:00`);
+        let currentMin = timeToMinutes(session.start);
+        const endMin = timeToMinutes(session.end);
 
-        while (currentTime.getTime() + systemDuration * 60000 <= endTime.getTime()) {
+        // Loop selagi slot tak melebihi waktu sesi
+        while (currentMin + currentServiceDuration <= endMin) {
             
-            const timeString = currentTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            const timeString = minutesToTime(currentMin);
             
-            // LOGIK BARU: 
-            // Kita tak skip, tapi kita tanda status dia
-            const isBooked = bookedTimes.includes(timeString);
+            // LOGIK BARU: Check Bertembung (Collision) 💥
+            // Slot dikira "Booked" jika masa dia bertindih dengan mana-mana blockedRanges
+            const myStart = currentMin;
+            const myEnd = currentMin + currentServiceDuration;
+
+            const isOverlap = blockedRanges.some(range => {
+                // Formula Bertembung: (StartA < EndB) && (EndA > StartB)
+                return myStart < range.end && myEnd > range.start;
+            });
 
             slots.push({
                 time: timeString,
-                booked: isBooked // True kalau dah ada orang
+                booked: isOverlap // True jika bertembung
             });
 
             // Lompat ke slot seterusnya
-            currentTime = new Date(currentTime.getTime() + systemDuration * 60000);
+            currentMin += currentServiceDuration;
         }
       });
 
@@ -95,7 +123,7 @@ export default function BookingPage() {
   }, [selectedDate, selectedService]);
 
 
-  // --- 3. HANDLE PAYMENT ---
+  // --- 3. HANDLE PAYMENT (UPDATED) ---
   const handleCheckout = async (e) => {
     e.preventDefault();
     if (!selectedSlot || !formData.name || !formData.phone) {
@@ -111,14 +139,21 @@ export default function BookingPage() {
             body: JSON.stringify({
                 service: selectedService,
                 date: selectedDate,
-                time: selectedSlot, // selectedSlot cuma pegang string masa (cth: "10:00")
+                time: selectedSlot,
                 client: formData
             }),
         });
 
-        const { id } = await response.json();
-        const stripe = await stripePromise;
-        await stripe.redirectToCheckout({ sessionId: id });
+        const data = await response.json();
+
+        // LOGIK BARU: Redirect terus guna URL dari backend
+        if (data.url) {
+            window.location.href = data.url; 
+        } else {
+            console.error("Tiada URL diterima:", data);
+            alert("Ralat sistem pembayaran. Sila cuba sebentar lagi.");
+            setIsProcessing(false);
+        }
 
     } catch (err) {
         console.error("Payment Error:", err);
@@ -190,15 +225,15 @@ export default function BookingPage() {
                             {slotList.map((slotObj, index) => (
                                 <button
                                     key={index}
-                                    disabled={slotObj.booked} // Matikan butang kalau booked
+                                    disabled={slotObj.booked} 
                                     onClick={() => setSelectedSlot(slotObj.time)}
                                     className={`
                                         py-2 px-1 rounded-lg text-sm font-bold transition border
                                         ${slotObj.booked 
-                                            ? 'bg-gray-100 text-gray-300 border-gray-100 cursor-not-allowed line-through' // Style kalau Booked (Pudar)
+                                            ? 'bg-gray-100 text-gray-300 border-gray-100 cursor-not-allowed line-through' 
                                             : selectedSlot === slotObj.time 
-                                                ? 'bg-black text-white border-black shadow-lg transform scale-105' // Style kalau Selected
-                                                : 'bg-white text-gray-700 border-gray-200 hover:border-black hover:bg-gray-50' // Style kalau Available
+                                                ? 'bg-black text-white border-black shadow-lg transform scale-105' 
+                                                : 'bg-white text-gray-700 border-gray-200 hover:border-black hover:bg-gray-50' 
                                         }
                                     `}
                                 >

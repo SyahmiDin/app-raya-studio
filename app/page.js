@@ -46,7 +46,7 @@ export default function Home() {
       {/* BACKGROUND */}
       <div className="absolute inset-0 z-0">
         <img src="/bg.jpeg" alt="Background Studio" className="w-full h-full object-cover"/>
-        <div className="absolute inset-0 bg-black/84"></div>
+        <div className="absolute inset-0 bg-black/70"></div>
       </div>
 
       {/* NAVBAR */}
