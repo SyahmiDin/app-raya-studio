@@ -192,16 +192,7 @@ export default function AdminPage() {
        💰 Urus Promo
      </Link>
 
-                 {/* BUTANG LOGOUT */}
-                 <button
-                   onClick={() => {
-                     document.cookie = "admin_session=; path=/; max-age=0";
-                     window.location.href = "/";
-                   }}
-                   className="bg-white border border-gray-300 text-gray-700 px-5 py-2 rounded-lg font-bold hover:bg-gray-100 transition"
-                 >
-                   Logout 🚪
-                 </button>
+                 
             </div>
         </div>
 
