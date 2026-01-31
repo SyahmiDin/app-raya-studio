@@ -88,7 +88,7 @@ export default function AdminPromoPage() {
                     <span className="truncate text-gray-500">.../booking?ref={item.code}</span>
                     <button 
                         onClick={() => {
-                            const url = `${window.location.origin}/booking?ref=${item.code}`;
+                            const url = `${window.location.origin}/?ref=${item.code}`;
                             navigator.clipboard.writeText(url);
                             alert("Link disalin! 📋\n" + url);
                         }}

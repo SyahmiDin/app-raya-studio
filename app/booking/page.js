@@ -27,13 +27,20 @@ function BookingContent() {
   const minutesToTime = (totalMinutes) => { const h = Math.floor(totalMinutes / 60); const m = totalMinutes % 60; return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`; };
   const formatTimeDisplay = (time24) => { const [h, m] = time24.split(':'); const hr = parseInt(h); return `${hr % 12 || 12}:${m} ${hr >= 12 ? 'PM' : 'AM'}`; };
 
-  // --- 1. CHECK URL BILA PAGE LOAD (AUTO FILL) ---
+  // --- 1. CHECK URL & LOCAL STORAGE (AUTO FILL) ---
   useEffect(() => {
-    const refCode = searchParams.get("ref"); // Ambil ?ref=... dari URL
+    // A. Cuba cari dalam URL dulu (?ref=...)
+    let refCode = searchParams.get("ref");
     
+    // B. Kalau tak jumpa kat URL, cari dalam LocalStorage (Memori Browser)
+    if (!refCode && typeof window !== 'undefined') {
+        refCode = localStorage.getItem("studioRayaReferral");
+    }
+
+    // C. Kalau jumpa (tak kisah dari URL atau Storage), run check
     if (refCode) {
-        setPromoCode(refCode); // Masukkan dalam input
-        handleCheckCode(refCode); // Terus check valid ke tak
+        setPromoCode(refCode); // Masukkan dalam input visual
+        handleCheckCode(refCode); // Check valid ke tak
     }
   }, [searchParams]);
 
