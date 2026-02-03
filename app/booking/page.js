@@ -124,7 +124,7 @@ function BookingContent() {
         const data = await response.json();
         if (data.url) window.location.href = data.url; 
         else { alert("Error payment"); setIsProcessing(false); }
-    } catch (err) { alert("System Error"); setIsProcessing(false); }
+    } catch (err) { alert("System Error"); setIsProcessing(false); } 
   };
 
   // --- UI COMPONENTS (LOADING) ---

@@ -51,7 +51,7 @@ export default function Home() {
 
       {/* NAVBAR */}
       <nav className="relative z-40 w-full max-w-7xl mx-auto p-6 flex justify-between items-center text-white">
-        <div className="text-xl font-bold tracking-widest uppercase">
+        <div className="text-xl font-bold tracking-widest uppercase"> 
           Studio ABG Raya 2026
         </div>
 
