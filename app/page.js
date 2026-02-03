@@ -74,7 +74,7 @@ export default function Home() {
           ) : (
             services.map((service) => (
               <div key={service.id} className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-white hover:bg-white/20 transition duration-300">
-                <h3 className="font-bold text-lg mb-1 text-blue-300">{service.name}</h3>
+                <h3 className="font-extrabold text-lg mb-1 text-gray-200">{service.name}</h3>
                 <div className="text-3xl font-bold mb-2">RM{service.price}</div>
                 <p className="text-sm text-gray-300">{service.description}</p>
                 <div className="mt-3 text-xs bg-black/30 inline-block px-3 py-1 rounded-full">
@@ -88,7 +88,7 @@ export default function Home() {
         {/* BUTTON TEMPAH */}
         <Link
           href="/booking"
-          className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-blue-600 font-lg rounded-full hover:bg-blue-700 hover:scale-105 focus:outline-none ring-offset-2 focus:ring-2 shadow-2xl shadow-blue-500/50"
+          className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-purple-600 font-lg rounded-full hover:bg-purple-700 hover:scale-105 focus:outline-none ring-offset-2 focus:ring-2 shadow-2xl shadow-blue-500/50"
         >
           <span>TEMPAH SLOT SEKARANG</span>
         </Link>
@@ -98,7 +98,7 @@ export default function Home() {
       <footer className="bg-gray-900 z-40 text-white py-5 text-center border-t border-gray-800">
         <h3 className="font-black text-xl mb-2 tracking-widest">STUDIO ABG 2026</h3>
         <p className="text-gray-700 text-xs">
-          © Hak Cipta Terpelihara.
+          Hak Cipta Terpelihara © 2026 Al Bayan Global.
         </p>
       </footer>
 
