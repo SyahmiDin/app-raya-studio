@@ -277,7 +277,7 @@ function BookingContent() {
                                         type="text" 
                                         value={promoCode}
                                         onChange={(e) => setPromoCode(e.target.value)}
-                                        placeholder="Cth: RAYA2025"
+                                        placeholder="Cth: STAFF023"
                                         className="flex-1 p-3 border border-slate-300 rounded-xl uppercase font-mono text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white"
                                     />
                                     <button 
