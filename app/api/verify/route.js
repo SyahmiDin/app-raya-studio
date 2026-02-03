@@ -11,8 +11,7 @@ export async function GET(request) {
   if (!sessionId) return NextResponse.json({ error: "No Session" }, { status: 400 });
 
   try {
-    // 1. PANGGIL STRIPE (DENGAN EXTRA DATA)
-    // Kita tambah 'line_items' supaya dia bawak sekali nama pakej
+    // 1. DAPATKAN DATA DARI STRIPE
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
         expand: ['payment_intent.latest_charge', 'line_items'] 
     });
@@ -21,14 +20,11 @@ export async function GET(request) {
         return NextResponse.json({ error: "Unpaid" }, { status: 400 });
     }
 
-    // 2. AMBIL NAMA PAKEJ YANG BETUL
-    // Sekarang data ni dah wujud sebab kita dah expand
     const packageName = session.line_items?.data?.[0]?.description || "Pakej Studio";
-    
     const receiptUrl = session.payment_intent?.latest_charge?.receipt_url;
     const info = session.metadata;
 
-    // 3. SETUP EMAIL
+    // 2. SETUP PENGHANTAR (Guna akaun Admin Utama)
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
@@ -39,49 +35,53 @@ export async function GET(request) {
       },
     });
 
-    // 4. HANTAR EMAIL (Client)
+    // --- SENARAI STAFF YANG AKAN TERIMA NOTIFIKASI ---
+    // Tuan boleh tambah seberapa banyak email di sini (pisahkan dengan koma)
+    const staffEmails = [
+        "syahmi@dhdgroup.com.my"       
+    ];
+
+
+    // 3. HANTAR EMAIL KE CLIENT (Resit)
     await transporter.sendMail({
        from: '"Studio ABG" <admin@dhdgroup.com.my>',
-       to: info.client_email,
-       subject: "✅ Tempahan & Resit Bayaran",
+       to: info.client_email, // Email client seorang sahaja
+       subject: "Tempahan & Resit Bayaran",
        html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
             <h2 style="color: #333;">Terima Kasih, ${info.client_name}!</h2>
-            <p>Bayaran anda sebanyak <strong>RM${info.final_price_paid}</strong> telah berjaya diterima.</p>
-            
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <p style="margin: 5px 0;"><strong>📅 Tarikh:</strong> ${info.booking_date}</p>
-                <p style="margin: 5px 0;"><strong>⏰ Masa:</strong> ${info.start_time}</p>
-                
-                <p style="margin: 5px 0;"><strong>📦 Pakej:</strong> ${packageName}</p>
-            </div>
-
-            <p>Sila klik butang di bawah untuk melihat atau memuat turun resit rasmi anda:</p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="${receiptUrl}" style="background-color: #2563EB; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-                    📄 Lihat Resit Rasmi (Stripe)
-                </a>
-            </div>
-
-            <p style="font-size: 12px; color: #777;">Jika butang di atas tidak berfungsi, sila copy link ini:<br>${receiptUrl}</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-            <p style="font-size: 12px; color: #999;">Email ini dijana secara automatik oleh Sistem Studio ABG.</p>
+            <p>Bayaran anda sebanyak <strong>RM${info.final_price_paid}</strong> telah diterima.</p>
+            <p><strong>Pakej:</strong> ${packageName}</p>
+            <p><strong>Tarikh:</strong> ${info.booking_date} @ ${info.start_time}</p>
+            <br>
+            <a href="${receiptUrl}" style="background-color: #2563EB; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">📄 Lihat Resit Rasmi</a>
         </div>
        `
     });
 
-    // 5. HANTAR EMAIL (Admin)
+    // 4. HANTAR EMAIL KE SEMUA STAFF (Notifikasi)
     await transporter.sendMail({
         from: '"Sistem Booking" <admin@dhdgroup.com.my>',
-        to: "admin@dhdgroup.com.my", 
-        subject: `💰 Booking Baru: ${info.client_name}`,
+        to: staffEmails, // <--- DI SINI KITA MASUKKAN LIST RAMAI-RAMAI TADI
+        subject: `NEW BOOKING: ${info.client_name} (RM${info.final_price_paid})`,
         html: `
-            <h3>Client Baru!</h3>
-            <p>Nama: ${info.client_name}</p>
-            <p>Pakej: ${packageName}</p>
-            <p>Bayaran: RM${info.final_price_paid}</p>
-            <p><a href="${receiptUrl}">Lihat Resit Client</a></p>
+            <div style="font-family: Arial, sans-serif; border: 2px solid green; padding: 20px; background-color: #f0fff4;">
+                <h2 style="color: green; margin-top: 0;">🔔 Pelanggan Baru!</h2>
+                <p>Sila bersedia untuk slot berikut:</p>
+                
+                <ul style="background-color: white; padding: 15px 30px; border-radius: 5px; border: 1px solid #ddd;">
+                    <li><strong>Nama:</strong> ${info.client_name}</li>
+                    <li><strong>Phone:</strong> <a href="tel:${info.client_phone}">${info.client_phone}</a></li>
+                    <li><strong>Pakej:</strong> ${packageName}</li>
+                    <li><strong>Tarikh:</strong> ${info.booking_date}</li>
+                    <li><strong>Masa:</strong> ${info.start_time}</li>
+                </ul>
+
+                <p><strong>Status Bayaran:</strong> ✅ SUDAH BAYAR (RM${info.final_price_paid})</p>
+                <p><strong>Referral Code:</strong> ${info.referral_code || '-'}</p>
+                <br>
+                <p style="font-size: 12px; color: #555;">Email ini dihantar kepada: ${staffEmails.join(", ")}</p>
+            </div>
         `
     });
 
