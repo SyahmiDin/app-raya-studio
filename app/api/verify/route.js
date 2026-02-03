@@ -11,22 +11,24 @@ export async function GET(request) {
   if (!sessionId) return NextResponse.json({ error: "No Session" }, { status: 400 });
 
   try {
-    // 1. DAPATKAN SESSION + EXPAND PAYMENT_INTENT
-    // Kita tambah { expand: ... } untuk dapatkan info resit dari dalam payment_intent
+    // 1. PANGGIL STRIPE (DENGAN EXTRA DATA)
+    // Kita tambah 'line_items' supaya dia bawak sekali nama pakej
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
-        expand: ['payment_intent.latest_charge'] 
+        expand: ['payment_intent.latest_charge', 'line_items'] 
     });
 
     if (session.payment_status !== "paid") {
         return NextResponse.json({ error: "Unpaid" }, { status: 400 });
     }
 
-    // 2. KOREK URL RESIT
-    // Stripe simpan link resit dalam: session -> payment_intent -> latest_charge -> receipt_url
+    // 2. AMBIL NAMA PAKEJ YANG BETUL
+    // Sekarang data ni dah wujud sebab kita dah expand
+    const packageName = session.line_items?.data?.[0]?.description || "Pakej Studio";
+    
     const receiptUrl = session.payment_intent?.latest_charge?.receipt_url;
     const info = session.metadata;
 
-    // 3. SETUP EMAIL (Google Workspace)
+    // 3. SETUP EMAIL
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
@@ -37,7 +39,7 @@ export async function GET(request) {
       },
     });
 
-    // 4. HANTAR EMAIL DENGAN LINK RESIT
+    // 4. HANTAR EMAIL (Client)
     await transporter.sendMail({
        from: '"Studio ABG" <admin@dhdgroup.com.my>',
        to: info.client_email,
@@ -50,7 +52,8 @@ export async function GET(request) {
             <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <p style="margin: 5px 0;"><strong>📅 Tarikh:</strong> ${info.booking_date}</p>
                 <p style="margin: 5px 0;"><strong>⏰ Masa:</strong> ${info.start_time}</p>
-                <p style="margin: 5px 0;"><strong>📦 Pakej:</strong> ${session.line_items?.data?.[0]?.description || 'Pakej Studio'}</p>
+                
+                <p style="margin: 5px 0;"><strong>📦 Pakej:</strong> ${packageName}</p>
             </div>
 
             <p>Sila klik butang di bawah untuk melihat atau memuat turun resit rasmi anda:</p>
@@ -68,7 +71,7 @@ export async function GET(request) {
        `
     });
 
-    // Email ke Admin (Optional: Kalau nak link resit jugak)
+    // 5. HANTAR EMAIL (Admin)
     await transporter.sendMail({
         from: '"Sistem Booking" <admin@dhdgroup.com.my>',
         to: "admin@dhdgroup.com.my", 
@@ -76,6 +79,7 @@ export async function GET(request) {
         html: `
             <h3>Client Baru!</h3>
             <p>Nama: ${info.client_name}</p>
+            <p>Pakej: ${packageName}</p>
             <p>Bayaran: RM${info.final_price_paid}</p>
             <p><a href="${receiptUrl}">Lihat Resit Client</a></p>
         `
