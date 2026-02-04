@@ -85,25 +85,64 @@ export default function Home() {
           [1, 2, 3].map((i) => <div key={i} className="bg-white/10 h-40 rounded-xl animate-pulse"></div>)
         ) : (
           /* Data Loaded */
-          services.map((service, index) => (
-            <div 
-              key={service.id} 
-              className="animate-custom-fade bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-white hover:bg-white/20 transition duration-300 hover:scale-102"
-              style={{ 
-                animationDelay: `${index * 200}ms` // Delay berbeza ikut urutan (0ms, 200ms, 400ms...)
-              }}
-            >
-              <h3 className="font-extrabold text-lg mb-1 text-gray-200">{service.name}</h3>
-              <div className="text-3xl font-bold mb-2">RM{service.price}</div>
-              <p className="text-sm text-gray-300">{service.description}</p>
-              <div className="mt-3 text-xs bg-black/30 inline-block px-3 py-1 rounded-full">
-                ⏱️ {service.duration_minutes} Minit
+          services.map((service, index) => {
+            
+            // --- LOGIC KIRAAN HARGA ASAL (DISPLAY SAHAJA) ---
+            // Sebab harga DB dah 10% off, kita bahagi 0.9 untuk dapat harga asal
+            const originalPrice = Math.ceil(service.price / 0.9);
+
+            return (
+              <div 
+                key={service.id} 
+                className="animate-custom-fade bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-white hover:bg-white/20 transition duration-300 hover:scale-102 relative overflow-hidden"
+                style={{ 
+                  animationDelay: `${index * 200}ms`
+                }}
+              >
+                {/* Badge Early Bird (Optional: Hiasan bucu) */}
+                <div className="absolute top-0 right-0 bg-[#412986] text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
+                  Early Bird
+                </div>
+
+                <h3 className="font-extrabold text-lg mb-2 text-gray-200">{service.name}</h3>
+                
+                {/* --- DISPLAY HARGA PROMO --- */}
+                <div className="flex flex-col mb-3">
+                    <div className="flex items-center gap-2">
+                        {/* Harga Asal (Dipoting) */}
+                        <span className="text-gray-400 line-through text-m decoration-red-500/70 decoration-2">
+                            RM{originalPrice}
+                        </span>
+                        {/* Tag Diskaun */}
+                        <span className="bg-[#412986] text-white text-[13px] font-bold px-1.5 rounded">
+                            -10%
+                        </span>
+                    </div>
+                    {/* Harga Database (Harga Selepas Diskaun) */}
+                    <div className="text-4xl font-black text-gray-100 drop-shadow-sm">
+                        RM{service.price}
+                    </div>
+                </div>
+                {/* --------------------------- */}
+
+                <p className="text-sm text-gray-300 mb-4 leading-relaxed">{service.description}</p>
+                
+                <div className="flex items-center gap-2">
+                    <div className="text-xs bg-black/40 border border-white/10 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-gray-300">
+                        ⏱️ {service.duration_minutes} Minit
+                    </div>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
+        <div className="max-w-6xl bg-black/50 p-4 rounded-xl mb-4 animate-fade-in-up delay-100">
+        <p className="text-white text-lg md:text-xl max-w-2xl mb- drop-shadow-md italic animate-pulse">
+          Harga promo 'Early Bird' terhad sehingga 20 Februari 2026 11.59 malam sahaja!
+        </p>
+        </div>
         {/* --- CONTAINER BUTTON (DIV BARU) --- */}
         <div className="flex flex-col md:flex-row gap-6 mt-8 justify-center items-center w-full animate-fade-in-up delay-200">
             
