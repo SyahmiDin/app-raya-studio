@@ -72,19 +72,23 @@ function GalleryContent() {
 
   async function handleSingleDownload(url, filename, bypassCheck = false) {
     if (!bypassCheck && !isPinVerified) return requestSingleDownload(url, filename);
+    
     setDownloadingId(url);
     try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
+      // KITA GUNA PROXY URL
+      const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename.split("/").pop())}`;
+
+      // Teknik Download Biasa
       const link = document.createElement("a");
-      link.href = blobUrl;
-      link.setAttribute("download", filename.split("/").pop());
+      link.href = proxyUrl;
+      link.setAttribute("download", filename.split("/").pop()); // Backup attribute
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (error) { alert("Gagal download."); }
+
+    } catch (error) { 
+        alert("Gagal download."); 
+    }
     setDownloadingId(null);
   }
 
@@ -100,21 +104,37 @@ function GalleryContent() {
   async function handleBulkDownload(bypassCheck = false) {
     if (!bypassCheck && !isPinVerified) return requestBulkDownload();
     if (photos.length === 0) return;
+    
     setIsZipping(true);
     setZipProgress(0);
     const zip = new JSZip();
+
     try {
       for (let i = 0; i < photos.length; i++) {
         const photo = photos[i];
         const filename = photo.key.split("/").pop();
-        const response = await fetch(photo.url);
+        
+        // KITA FETCH DARI PROXY JUGA SUPAYA TAK KENA BLOCK
+        // Kita fetch blob dari API kita sendiri
+        const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(photo.url)}&filename=${filename}`;
+        
+        const response = await fetch(proxyUrl);
+        
+        if (!response.ok) throw new Error("Network error");
+        
         const blob = await response.blob();
         zip.file(filename, blob);
+
         setZipProgress(Math.round(((i + 1) / photos.length) * 100));
       }
+
       const content = await zip.generateAsync({ type: "blob" });
       saveAs(content, `${clientFolder}-StudioRaya.zip`);
-    } catch (error) { alert("Error zipping."); }
+
+    } catch (error) { 
+        console.error(error);
+        alert("Gagal memproses Zip. Sila cuba lagi."); 
+    }
     setIsZipping(false);
   }
 

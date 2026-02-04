@@ -182,14 +182,14 @@ export default function AdminPage() {
                    href="/admin/bookings" 
                    className="bg-blue-600 text-white px-5 py-2 rounded-lg font-bold shadow hover:bg-blue-700 transition flex items-center gap-2"
                  >
-                   📅 List Booking
+                   List Booking
                  </Link>
                  
                  <Link 
        href="/admin/promo" 
        className="bg-green-600 text-white px-5 py-2 rounded-lg font-bold shadow hover:bg-green-700 transition flex items-center gap-2"
      >
-       💰 Urus Promo
+       Referral Kod
      </Link>
 
                  
@@ -230,7 +230,7 @@ export default function AdminPage() {
           </div>
           {selectedFiles.length > 0 && (
             <div className="bg-gray-100 p-4 rounded-lg flex justify-between items-center">
-                <p className="text-sm font-bold">Ready: {selectedFiles.length} gambar</p>
+                <p className="text-sm text-gray-800 font-bold">Ready: {selectedFiles.length} gambar</p>
                 <button onClick={() => {setSelectedFiles([]); setPreviewUrls([])}} className="text-xs text-red-500 hover:underline">Clear</button>
             </div>
           )}
@@ -240,7 +240,7 @@ export default function AdminPage() {
              </div>
           )}
           <button onClick={handleBulkUpload} disabled={uploading || selectedFiles.length === 0} className="w-full bg-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 disabled:opacity-50 transition transform active:scale-95 shadow-lg">
-            {uploading ? `Sedang Upload...` : `Muat Naik`}
+            {uploading ? `Sedang Muat Naik...` : `Muat Naik`}
           </button>
         </div>
 
