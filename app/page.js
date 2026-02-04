@@ -88,7 +88,7 @@ export default function Home() {
           services.map((service, index) => (
             <div 
               key={service.id} 
-              className="animate-custom-fade bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-white hover:bg-white/20 transition duration-300"
+              className="animate-custom-fade bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-white hover:bg-white/20 transition duration-300 hover:scale-102"
               style={{ 
                 animationDelay: `${index * 200}ms` // Delay berbeza ikut urutan (0ms, 200ms, 400ms...)
               }}
@@ -110,7 +110,7 @@ export default function Home() {
             {/* Button 1: Booking */}
             <Link 
               href="/booking" 
-              className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-[#412986] font-lg rounded-full hover:bg-[#301F63] hover:scale-105 focus:outline-none ring-offset-2 focus:ring-2 shadow-2xl shadow-purple-500/50 w-full md:w-auto"
+              className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-[#412986] font-lg rounded-full hover:bg-[#301F63] hover:scale-105 focus:outline-none ring-offset-2 focus:ring-2 shadow-2xl shadow-purple-500/50 w-full md:w-auto animate-custom-fade"
             >
               <span>TEMPAH SLOT SEKARANG</span>
             </Link>
@@ -118,7 +118,7 @@ export default function Home() {
             {/* Button 2: Availability */}
             <Link 
               href="/availability" 
-              className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-transparent border-2 border-[#412986] font-lg rounded-full hover:bg-[#301F63] hover:border-[#301F63] hover:scale-105 focus:outline-none shadow-2xl shadow-purple-500/20 w-full md:w-auto"
+              className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-transparent border-2 border-[#412986] font-lg rounded-full hover:bg-[#301F63] hover:border-[#301F63] hover:scale-105 focus:outline-none shadow-2xl shadow-purple-500/20 w-full md:w-auto animate-custom-fade"
             >
               <span>LIHAT KEKOSONGAN</span>
             </Link>
