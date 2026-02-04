@@ -37,7 +37,8 @@ export async function GET(request) {
 
     // --- SENARAI STAFF YANG AKAN TERIMA NOTIFIKASI ---
     const staffEmails = [
-        "syahmi@dhdgroup.com.my"       
+        "syahmi@dhdgroup.com.my",
+        "zaid@dhdgroup.com.my"       
     ];
 
 
@@ -61,11 +62,11 @@ export async function GET(request) {
     // 4. HANTAR EMAIL KE SEMUA STAFF (Notifikasi)
     await transporter.sendMail({
         from: '"Sistem Booking" <admin@dhdgroup.com.my>',
-        to: staffEmails, // <--- DI SINI KITA MASUKKAN LIST RAMAI-RAMAI TADI
+        to: staffEmails, 
         subject: `NEW BOOKING: ${info.client_name} (RM${info.final_price_paid})`,
         html: `
             <div style="font-family: Arial, sans-serif; border: 2px solid green; padding: 20px; background-color: #f0fff4;">
-                <h2 style="color: green; margin-top: 0;">🔔 Pelanggan Baru!</h2>
+                <h2 style="color: green; margin-top: 0;">Tempahan Baharu!</h2>
                 <p>Sila bersedia untuk slot berikut:</p>
                 
                 <ul style="background-color: white; padding: 15px 30px; border-radius: 5px; border: 1px solid #ddd;">

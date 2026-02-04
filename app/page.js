@@ -67,31 +67,63 @@ export default function Home() {
           Gambar raya berkualiti studio profesional. Cepat, selesa, dan harga mampu milik.
         </p>
 
-        {/* PAKEJ LIST */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full mb-12">
-          {services.length === 0 ? (
-            [1, 2, 3].map((i) => <div key={i} className="bg-white/10 h-40 rounded-xl animate-pulse"></div>)
-          ) : (
-            services.map((service) => (
-              <div key={service.id} className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-white hover:bg-white/20 transition duration-300">
-                <h3 className="font-extrabold text-lg mb-1 text-gray-200">{service.name}</h3>
-                <div className="text-3xl font-bold mb-2">RM{service.price}</div>
-                <p className="text-sm text-gray-300">{service.description}</p>
-                <div className="mt-3 text-xs bg-black/30 inline-block px-3 py-1 rounded-full">
-                  ⏱️ {service.duration_minutes} Minit
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+      <style>{`
+        @keyframes customFadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-custom-fade {
+          opacity: 0; /* Mula-mula ghaib */
+          animation: customFadeIn 0.8s ease-out forwards;
+        }
+      `}</style>
 
-        {/* BUTTON TEMPAH */}
-        <Link
-          href="/booking"
-          className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-purple-600 font-lg rounded-full hover:bg-purple-700 hover:scale-105 focus:outline-none ring-offset-2 focus:ring-2 shadow-2xl shadow-purple-500/50"
-        >
-          <span>TEMPAH SLOT SEKARANG</span>
-        </Link>
+      {/* PAKEJ LIST */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full mb-12">
+        {services.length === 0 ? (
+          /* Loading State */
+          [1, 2, 3].map((i) => <div key={i} className="bg-white/10 h-40 rounded-xl animate-pulse"></div>)
+        ) : (
+          /* Data Loaded */
+          services.map((service, index) => (
+            <div 
+              key={service.id} 
+              className="animate-custom-fade bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-white hover:bg-white/20 transition duration-300"
+              style={{ 
+                animationDelay: `${index * 200}ms` // Delay berbeza ikut urutan (0ms, 200ms, 400ms...)
+              }}
+            >
+              <h3 className="font-extrabold text-lg mb-1 text-gray-200">{service.name}</h3>
+              <div className="text-3xl font-bold mb-2">RM{service.price}</div>
+              <p className="text-sm text-gray-300">{service.description}</p>
+              <div className="mt-3 text-xs bg-black/30 inline-block px-3 py-1 rounded-full">
+                ⏱️ {service.duration_minutes} Minit
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+        {/* --- CONTAINER BUTTON (DIV BARU) --- */}
+        <div className="flex flex-col md:flex-row gap-6 mt-8 justify-center items-center w-full animate-fade-in-up delay-200">
+            
+            {/* Button 1: Booking */}
+            <Link 
+              href="/booking" 
+              className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-[#412986] font-lg rounded-full hover:bg-[#301F63] hover:scale-105 focus:outline-none ring-offset-2 focus:ring-2 shadow-2xl shadow-purple-500/50 w-full md:w-auto"
+            >
+              <span>TEMPAH SLOT SEKARANG</span>
+            </Link>
+
+            {/* Button 2: Availability */}
+            <Link 
+              href="/availability" 
+              className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-transparent border-2 border-[#412986] font-lg rounded-full hover:bg-[#301F63] hover:border-[#301F63] hover:scale-105 focus:outline-none shadow-2xl shadow-purple-500/20 w-full md:w-auto"
+            >
+              <span>LIHAT KEKOSONGAN</span>
+            </Link>
+
+        </div>
       </main>
 
       {/* --- FOOTER --- */}

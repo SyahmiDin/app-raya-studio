@@ -54,7 +54,7 @@ function BookingContent() {
     if (!selectedService || !selectedDate) return;
     async function checkAvailability() {
       setLoading(true); setSelectedSlot(null);
-      const sessions = [{ name: "Pagi", start: "10:00", end: "12:30" }, { name: "Petang", start: "14:00", end: "17:30" }, { name: "Malam", start: "20:00", end: "22:30" }];
+      const sessions = [{ name: "Pagi", start: "10:00", end: "13:00" }, { name: "Petang", start: "14:00", end: "17:30" }, { name: "Malam", start: "20:00", end: "23:00" }];
       
       const { data: existingBookings } = await supabase.from('bookings').select(`start_time, services ( duration_minutes )`).eq('booking_date', selectedDate).eq('status', 'paid');
       const blockedRanges = existingBookings?.map(b => { 
