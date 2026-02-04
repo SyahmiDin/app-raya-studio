@@ -110,8 +110,8 @@ export default function AvailabilityPage() {
   // groupkan ikut sesi
   const sessions = [
       { id: 'pagi', label: 'Pagi (10AM - 1PM)', color: 'text-gray-100' },
-      { id: 'petang', label: 'Petang (2PM - 7PM)', color: 'text-gray-100' },
-      { id: 'malam', label: 'Malam (7PM - 11PM)', color: 'text-gray-100' }
+      { id: 'petang', label: 'Petang (2PM - 6PM)', color: 'text-gray-100' },
+      { id: 'malam', label: 'Malam (8PM - 11PM)', color: 'text-gray-100' }
   ];
 
   return (
