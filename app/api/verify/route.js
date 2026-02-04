@@ -36,7 +36,6 @@ export async function GET(request) {
     });
 
     // --- SENARAI STAFF YANG AKAN TERIMA NOTIFIKASI ---
-    // Tuan boleh tambah seberapa banyak email di sini (pisahkan dengan koma)
     const staffEmails = [
         "syahmi@dhdgroup.com.my"       
     ];

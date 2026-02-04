@@ -88,7 +88,7 @@ export default function Home() {
         {/* BUTTON TEMPAH */}
         <Link
           href="/booking"
-          className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-purple-600 font-lg rounded-full hover:bg-purple-700 hover:scale-105 focus:outline-none ring-offset-2 focus:ring-2 shadow-2xl shadow-blue-500/50"
+          className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-purple-600 font-lg rounded-full hover:bg-purple-700 hover:scale-105 focus:outline-none ring-offset-2 focus:ring-2 shadow-2xl shadow-purple-500/50"
         >
           <span>TEMPAH SLOT SEKARANG</span>
         </Link>
