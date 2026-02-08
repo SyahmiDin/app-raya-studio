@@ -70,24 +70,43 @@ function GalleryContent() {
     }
   }
 
+  // --- GANTI FUNCTION INI (DIRECT DOWNLOAD) ---
   async function handleSingleDownload(url, filename, bypassCheck = false) {
     if (!bypassCheck && !isPinVerified) return requestSingleDownload(url, filename);
     
     setDownloadingId(url);
     try {
-      // KITA GUNA PROXY URL
-      const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename.split("/").pop())}`;
+      // 1. Fetch Direct dari Cloudflare (Jimat Bandwidth Server)
+      const response = await fetch(url, {
+          mode: 'cors', // Wajib ada CORS setting di Cloudflare
+          cache: 'no-cache'
+      });
 
-      // Teknik Download Biasa
+      if (!response.ok) throw new Error("Gagal download imej");
+
+      // 2. Tukar jadi Blob (File Object dalam browser)
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      // 3. Trigger Download
       const link = document.createElement("a");
-      link.href = proxyUrl;
-      link.setAttribute("download", filename.split("/").pop()); // Backup attribute
+      link.href = blobUrl;
+      // Pastikan nama fail ada .jpg di belakang
+      const cleanFilename = filename.split("/").pop(); 
+      link.download = cleanFilename; 
+      
       document.body.appendChild(link);
       link.click();
-      link.parentNode.removeChild(link);
+      
+      // 4. Cuci memory
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
 
     } catch (error) { 
-        alert("Gagal download."); 
+        console.error(error);
+        // Fallback: Kalau fetch gagal (CORS isu), buka di tab baru je
+        window.open(url, '_blank');
+        // alert("Gagal download. Sila cuba 'Open in New Tab'."); 
     }
     setDownloadingId(null);
   }
@@ -101,6 +120,7 @@ function GalleryContent() {
     }
   }
 
+  // --- GANTI FUNCTION INI (DIRECT BULK DOWNLOAD) ---
   async function handleBulkDownload(bypassCheck = false) {
     if (!bypassCheck && !isPinVerified) return requestBulkDownload();
     if (photos.length === 0) return;
@@ -114,11 +134,10 @@ function GalleryContent() {
         const photo = photos[i];
         const filename = photo.key.split("/").pop();
         
-        // KITA FETCH DARI PROXY JUGA SUPAYA TAK KENA BLOCK
-        // Kita fetch blob dari API kita sendiri
-        const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(photo.url)}&filename=${filename}`;
-        
-        const response = await fetch(proxyUrl);
+        // 1. Fetch Direct dari Cloudflare (Tak lalu server dah)
+        const response = await fetch(photo.url, {
+            mode: 'cors'
+        });
         
         if (!response.ok) throw new Error("Network error");
         
@@ -133,7 +152,7 @@ function GalleryContent() {
 
     } catch (error) { 
         console.error(error);
-        alert("Gagal memproses Zip. Sila cuba lagi."); 
+        alert("Gagal memproses Zip (Mungkin isu CORS atau Internet)."); 
     }
     setIsZipping(false);
   }

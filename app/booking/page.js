@@ -42,13 +42,14 @@ function BookingContent() {
     setSelectedDate(today);
   }, []);
 
-  // --- 2. FETCH SERVICES & AUTO SELECT PAKEJ ---
+  // --- 2. FETCH SERVICES, AUTO SELECT PAKEJ & AUTO REFERRAL ---
   useEffect(() => {
     async function fetchServices() {
       const { data } = await supabase.from('services').select('*').order('price');
       if (data) {
         setServices(data);
 
+        // A. LOGIC LOCK PAKEJ
         const packageIdFromUrl = searchParams.get('package');
         if (packageIdFromUrl) {
             const foundService = data.find(s => s.id == packageIdFromUrl);
@@ -60,6 +61,29 @@ function BookingContent() {
       }
     }
     fetchServices();
+
+    // B. LOGIC AFFILIATE / REFERRAL (Ini yang kita tambah)
+    // Ia akan baca ?ref=ABC atau ?referral=ABC
+    const refCode = searchParams.get('ref') || searchParams.get('referral');
+    
+    if (refCode) {
+        // 1. Masukkan dalam form automatik
+        setFormData(prev => ({ ...prev, referral: refCode.toUpperCase() }));
+        
+        // 2. (Optional) Kita simpan dalam localStorage supaya kalau dia refresh, kod tak hilang
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('studioRayaReferral', refCode.toUpperCase());
+        }
+    } else {
+        // Kalau URL tak ada ref, cuba check localStorage (backup)
+        if (typeof window !== 'undefined') {
+            const savedRef = localStorage.getItem('studioRayaReferral');
+            if (savedRef) {
+                setFormData(prev => ({ ...prev, referral: savedRef }));
+            }
+        }
+    }
+
   }, [searchParams]);
 
   // --- 3. FETCH TAKEN SLOTS (LOGIC BARU) ---
