@@ -1,146 +1,220 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
+import { loadStripe } from "@stripe/stripe-js";
 import { useSearchParams } from "next/navigation";
 
-// KITA ASINGKAN CONTENT KE DALAM FUNCTION INI
+// Key Stripe Public (Live)
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+
 function BookingContent() {
-  const searchParams = useSearchParams();
-  
-  // State Sedia Ada (LOGIC TIDAK DISENTUH)
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
-  const [selectedDate, setSelectedDate] = useState("");
-  const [slotList, setSlotList] = useState([]); 
+  
+  // State tarikh
+  const [selectedDate, setSelectedDate] = useState(""); 
+  
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  // State Referral
-  const [promoCode, setPromoCode] = useState("");
-  const [validReferral, setValidReferral] = useState(null);
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", referral: "" });
+  const [loading, setLoading] = useState(false);
+  
+  // State untuk Referral Code
+  const [promoStatus, setPromoStatus] = useState(null); // null, 'checking', 'valid', 'invalid'
   const [promoMessage, setPromoMessage] = useState("");
 
-  // Helpers
-  const timeToMinutes = (timeStr) => { const [h, m] = timeStr.split(':').map(Number); return h * 60 + m; };
-  const minutesToTime = (totalMinutes) => { const h = Math.floor(totalMinutes / 60); const m = totalMinutes % 60; return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`; };
-  const formatTimeDisplay = (time24) => { const [h, m] = time24.split(':'); const hr = parseInt(h); return `${hr % 12 || 12}:${m} ${hr >= 12 ? 'PM' : 'AM'}`; };
+  // UBAH: takenSlots sekarang simpan object {start, end}, bukan string masa sahaja
+  const [takenSlots, setTakenSlots] = useState([]);
+  
+  const [isPackageLocked, setIsPackageLocked] = useState(false);
+  const searchParams = useSearchParams();
 
-  // --- 1. CHECK URL & LOCAL STORAGE (AUTO FILL) ---
+  // Helper: Tukar masa "10:30" kepada minit (cth: 630)
+  const timeToMinutes = (timeStr) => {
+    const [h, m] = timeStr.split(':').map(Number);
+    return h * 60 + m;
+  };
+
+  // --- 1. AUTO SET TARIKH HARINI (Waktu Malaysia) ---
   useEffect(() => {
-    let refCode = searchParams.get("ref");
-    if (!refCode && typeof window !== 'undefined') {
-        refCode = localStorage.getItem("studioRayaReferral");
-    }
-    if (refCode) {
-        setPromoCode(refCode);
-        handleCheckCode(refCode);
-    }
-  }, [searchParams]);
+    const today = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'Asia/Kuala_Lumpur'
+    });
+    setSelectedDate(today);
+  }, []);
 
-  // --- FETCH SERVICES ---
+  // --- 2. FETCH SERVICES & AUTO SELECT PAKEJ ---
   useEffect(() => {
     async function fetchServices() {
       const { data } = await supabase.from('services').select('*').order('price');
-      if (data) { setServices(data); if (data.length > 0) setSelectedService(data[0]); }
-      setLoading(false);
+      if (data) {
+        setServices(data);
+
+        const packageIdFromUrl = searchParams.get('package');
+        if (packageIdFromUrl) {
+            const foundService = data.find(s => s.id == packageIdFromUrl);
+            if (foundService) {
+                setSelectedService(foundService);
+                setIsPackageLocked(true);
+            }
+        }
+      }
     }
     fetchServices();
-  }, []);
+  }, [searchParams]);
 
-  // --- GENERATE SLOTS ---
+  // --- 3. FETCH TAKEN SLOTS (LOGIC BARU) ---
   useEffect(() => {
-    if (!selectedService || !selectedDate) return;
-    async function checkAvailability() {
-      setLoading(true); setSelectedSlot(null);
-      const sessions = [{ name: "Pagi", start: "10:00", end: "13:00" }, { name: "Petang", start: "14:00", end: "17:30" }, { name: "Malam", start: "20:00", end: "23:00" }];
-      
-      const { data: existingBookings } = await supabase.from('bookings').select(`start_time, services ( duration_minutes )`).eq('booking_date', selectedDate).eq('status', 'paid');
-      const blockedRanges = existingBookings?.map(b => { 
-         const start = timeToMinutes(b.start_time.slice(0, 5)); 
-         return { start, end: start + b.services.duration_minutes + 5 }; 
-      }) || [];
+    if (selectedService && selectedDate) {
+      async function fetchSlots() {
+        // KITA PERLU AMBIL DURATION JUGA DARI TABLE SERVICES
+        const { data } = await supabase
+          .from('bookings')
+          .select('start_time, services(duration_minutes)') // <--- Update Query
+          .eq('booking_date', selectedDate)
+          .eq('status', 'paid');
 
-      let currentServiceDuration = selectedService.duration_minutes + 5;
-      let slots = [];
-
-      sessions.forEach(session => {
-        let currentMin = timeToMinutes(session.start);
-        const endMin = timeToMinutes(session.end);
-        while (currentMin + currentServiceDuration <= endMin) {
-            const timeString = minutesToTime(currentMin);
-            const myStart = currentMin; const myEnd = currentMin + currentServiceDuration;
-            const isOverlap = blockedRanges.some(r => myStart < r.end && myEnd > r.start);
-            slots.push({ time: timeString, booked: isOverlap });
-            currentMin += currentServiceDuration;
+        if (data) {
+          // Tukar setiap booking jadi range minit: { start: 600, end: 630 }
+          // Kita tambah buffer 5 minit siap-siap pada booking orang lain
+          const blockedRanges = data.map(b => {
+             const start = timeToMinutes(b.start_time.slice(0, 5));
+             const duration = b.services?.duration_minutes || 30; 
+             // Formula: Start + Duration + 5 minit buffer
+             return { start: start, end: start + duration + 5 }; 
+          });
+          setTakenSlots(blockedRanges);
         }
-      });
-      setSlotList(slots); setLoading(false);
+      }
+      fetchSlots();
     }
-    checkAvailability();
   }, [selectedDate, selectedService]);
 
-  // --- CHECK KOD ---
-  const handleCheckCode = async (codeToCheck = null) => {
-    const finalCode = (typeof codeToCheck === 'string' ? codeToCheck : promoCode).toUpperCase();
-
-    if (!finalCode) return;
-    setPromoMessage("Checking...");
+  // --- GENERATE TIME SLOTS (LOGIC BARU - CHECK OVERLAP) ---
+  const generateTimeSlots = () => {
+    if (!selectedService) return [];
     
-    const { data } = await supabase
-        .from('referral_codes')
-        .select('*')
-        .eq('code', finalCode)
-        .eq('is_active', true)
-        .single();
+    const slots = [];
+    const myDuration = selectedService.duration_minutes || 30;
+    const gap = 5; // Buffer 5 minit
+    
+    let currentMin = 10 * 60; 
+    const endMin = 23 * 60; 
 
-    if (data) {
-        setValidReferral(data.code);
-        setPromoMessage(`✅ Kod sah! (Support: ${data.staff_name})`);
-    } else {
-        setValidReferral(null);
-        setPromoMessage("❌ Kod tidak dijumpai.");
+    while (currentMin < endMin) {
+        const h = Math.floor(currentMin / 60);
+        const m = currentMin % 60;
+        const timeLabel = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        
+        // Kira waktu mula dan tamat slot yang user nak pilih ni
+        const myStart = currentMin;
+        const myEnd = currentMin + myDuration + gap; 
+
+        // Check Overlap: Adakah slot saya bertindih dengan mana-mana booking sedia ada?
+        // Formula Overlap: (StartA < EndB) && (EndA > StartB)
+        const isTaken = takenSlots.some(booked => {
+            return myStart < booked.end && myEnd > booked.start;
+        });
+
+        slots.push({ 
+            time: timeLabel, 
+            available: !isTaken 
+        });
+
+        // Lompat ke slot seterusnya (setiap 30 minit untuk paparan, atau ikut duration)
+        // Kalau tuan nak paparan fix setiap 30 minit (cth: 10:00, 10:30, 11:00), guna +30
+        // Kalau tuan nak dynamic ikut pakej + gap, guna myDuration + gap
+        currentMin += (myDuration + gap); 
+    }
+    return slots;
+  };
+
+  // --- FUNCTION CHECK REFERRAL CODE ---
+  const checkReferralCode = async () => {
+    const code = formData.referral.trim().toUpperCase(); // Pastikan huruf besar
+
+    if (!code) {
+        setPromoStatus(null);
+        setPromoMessage("");
+        return;
+    }
+
+    setPromoStatus("checking");
+    setPromoMessage("Sedang menyemak...");
+
+    try {
+        // Query table 'referral_codes'
+        const { data, error } = await supabase
+            .from('referral_codes')
+            .select('*')
+            .eq('code', code)
+            .eq('is_active', true) // Pastikan kod aktif
+            .single();
+
+        if (error || !data) {
+            setPromoStatus("invalid");
+            setPromoMessage("❌ Kod Tidak Sah / Tidak Wujud");
+        } else {
+            setPromoStatus("valid");
+            setPromoMessage(`✅ Kod Sah! (Staff: ${data.staff_name || 'Admin'})`);
+        }
+    } catch (err) {
+        console.error(err);
+        setPromoStatus("invalid");
+        setPromoMessage("❌ Ralat sistem semasa menyemak kod.");
     }
   };
 
-  const handleCheckout = async (e) => {
-    e.preventDefault();
-    if (!selectedSlot || !formData.name || !formData.phone) return alert("Lengkapkan maklumat!");
-    setIsProcessing(true);
 
+  // --- HANDLE PAYMENT ---
+  const handlePayment = async () => {
+    if (!selectedService || !selectedDate || !selectedSlot) {
+        alert("Sila lengkapkan pilihan pakej, tarikh dan masa.");
+        return;
+    }
+
+    setLoading(true);
+    
     try {
-        const response = await fetch("/api/checkout", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                service: selectedService,
-                date: selectedDate,
-                time: selectedSlot,
-                client: formData,
-                referralCode: validReferral
-            }),
+        const res = await fetch("/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            service: selectedService,
+            date: selectedDate,
+            time: selectedSlot,
+            customer: formData,
+          }),
         });
-        const data = await response.json();
-        if (data.url) window.location.href = data.url; 
-        else { alert("Error payment"); setIsProcessing(false); }
-    } catch (err) { alert("System Error"); setIsProcessing(false); } 
+
+        const json = await res.json();
+
+        if (json.error) {
+            alert("Ralat Pembayaran: " + json.error);
+            setLoading(false);
+            return;
+        }
+
+        if (json.url) {
+            window.location.href = json.url; 
+        } else {
+            alert("Gagal mendapatkan link pembayaran.");
+            setLoading(false);
+        }
+
+    } catch (err) {
+        console.error("System Error:", err);
+        alert("Gagal menghubungi server. Sila cuba lagi.");
+        setLoading(false);
+    }
   };
 
-  // --- UI COMPONENTS (LOADING) ---
-  if (loading && services.length === 0) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-        <p className="mt-4 text-slate-500 animate-pulse">Memuatkan Pakej...</p>
-    </div>
-  );
+  const visibleServices = isPackageLocked && selectedService ? [selectedService] : services;
 
-  // --- RETURN (DESIGN BARU) ---
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 sm:px-6 font-sans">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 font-sans text-gray-900">
+      <div className="max-w-4xl mx-auto">
         
-        {/* HEADER SECTION */}
+        {/* HEADER: TAJUK */}
         <div className="text-center mb-8 space-y-2">
             <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
                 Studio Raya <span className="text-indigo-600">2026</span>
@@ -149,205 +223,248 @@ function BookingContent() {
                 Tempah slot fotografi anda dengan mudah & pantas.
             </p>
         </div>
-        
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 overflow-hidden border border-slate-100">
-            
-            {/* PROGRESS BAR SIMPLIFIED */}
-            <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                <span className={selectedService ? "text-indigo-600" : ""}>1. Pakej</span>
-                <span className="text-slate-300">/</span>
-                <span className={selectedDate ? "text-indigo-600" : ""}>2. Tarikh</span>
-                <span className="text-slate-300">/</span>
-                <span className={selectedSlot ? "text-indigo-600" : ""}>3. Bayar</span>
-            </div>
 
-            <div className="p-6 md:p-8 space-y-10">
-                
-                {/* 1. SECTION: PILIH PAKEJ */}
-                <section>
-                    <h3 className="flex items-center gap-2 font-bold text-lg text-slate-800 mb-5">
-                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs">1</span>
-                        Pilih Pakej Anda
-                    </h3>
-                    <div className="grid md:grid-cols-3 gap-4">
-                        {services.map(s => {
-                            const isSelected = selectedService?.id === s.id;
-                            return (
-                                <div 
-                                    key={s.id} 
-                                    onClick={() => { setSelectedService(s); setSelectedSlot(null); }} 
-                                    className={`relative group cursor-pointer border-2 p-5 rounded-2xl transition-all duration-200 ease-in-out
-                                        ${isSelected 
-                                            ? 'border-indigo-600 bg-indigo-50/50 shadow-md transform scale-[1.02]' 
-                                            : 'border-slate-100 hover:border-indigo-300 hover:shadow-sm bg-white'
-                                        }`}
-                                >
-                                    {isSelected && (
-                                        <div className="absolute -top-3 -right-2 bg-indigo-600 text-white p-1 rounded-full shadow-sm">
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                                        </div>
-                                    )}
-                                    <h4 className={`font-bold ${isSelected ? 'text-indigo-900' : 'text-slate-700'}`}>{s.name}</h4>
-                                    <div className="flex items-baseline gap-1 my-2">
-                                        <span className="text-sm font-medium text-slate-500">RM</span>
-                                        <span className={`text-3xl font-extrabold ${isSelected ? 'text-indigo-600' : 'text-slate-900'}`}>{s.price}</span>
+        {/* DATE PICKER */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col items-center justify-center gap-4">
+
+          <h3 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Pilih Tarikh</h3>
+
+          <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
+                <label className="text-sm font-bold text-gray-600">Tarikh:</label>
+                <input 
+                    type="date" 
+                    className="bg-transparent border-none focus:ring-0 text-gray-900 font-bold outline-none cursor-pointer"
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    value={selectedDate}
+                    min={new Date().toISOString().split("T")[0]}
+                />
+            </div>
+        </div>
+
+        {/* STEP 1: PILIH PAKEJ */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 relative">
+          
+          {isPackageLocked && (
+            <div className="absolute top-4 right-4 z-10">
+                <span className="bg-purple-100 text-[#412986] text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 border border-purple-200">
+                    🔒 Pakej Pilihan
+                </span>
+            </div>
+          )}
+
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <span className="bg-indigo-100 text-indigo-600 w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
+            Pakej Fotografi
+          </h2>
+          
+          <div className={`gap-4 ${isPackageLocked ? 'flex justify-center' : 'grid grid-cols-1 md:grid-cols-3'}`}>
+            {visibleServices.map((service) => {
+                 const originalPrice = Math.ceil(service.price / 0.9);
+                 const isSelected = selectedService?.id === service.id;
+
+                 return (
+                    <div 
+                        key={service.id}
+                        onClick={() => {
+                            if (!isPackageLocked) {
+                                setSelectedService(service);
+                                setSelectedSlot(null);
+                            }
+                        }}
+                        className={`
+                        p-4 rounded-xl border-2 transition-all relative overflow-hidden
+                        ${isPackageLocked ? 'w-full max-w-sm' : ''} 
+                        ${isSelected
+                            ? "border-[#412986] bg-purple-50 ring-1 ring-[#412986]" 
+                            : "border-gray-200 bg-white"
+                        }
+                        ${!isPackageLocked ? 'cursor-pointer hover:border-purple-300' : ''}
+                        `}
+                    >
+                        {isSelected && (
+                            <div className="absolute top-0 right-0 bg-[#412986] text-white text-xs px-2 py-1 rounded-bl-lg font-bold">SELECTED</div>
+                        )}
+
+                        <h3 className="font-bold text-lg mb-1">{service.name}</h3>
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs text-gray-400 line-through">RM{originalPrice}</span>
+                            <span className="text-xl font-black text-[#412986]">RM{service.price}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-2">{service.description}</p>
+                        <div className="text-xs font-semibold bg-gray-100 inline-block px-2 py-1 rounded">
+                            ⏱️ {service.duration_minutes} Minit
+                        </div>
+                    </div>
+                 );
+            })}
+          </div>
+
+          {isPackageLocked && (
+            <div className="mt-6 text-center border-t border-gray-100 pt-4">
+                <a href="/" className="inline-block text-xs font-bold text-gray-600 bg-gray-100 px-4 py-2 rounded-full hover:bg-gray-200 transition">
+                    ← Pilih Pakej Lain
+                </a>
+            </div>
+          )}
+        </div>
+
+        {/* STEP 2: PILIH SLOT MASA */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col gap-4">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <span className="bg-indigo-100 text-indigo-600 w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
+              Pilih Slot Masa
+            </h2>
+        {selectedService && (
+          <div id="calendar-section" className="animate-fade-in-up">
+            
+            {!selectedDate ? (
+                 <div className="text-center py-8 bg-gray-50 rounded-xl text-gray-400">Loading Calendar...</div>
+            ) : (
+                <div className="space-y-8 py-8">
+                    {(() => {
+                        const allSlots = generateTimeSlots();
+                        
+                        const filterSlots = (startHour, endHour) => {
+                            return allSlots.filter(slot => {
+                                const hour = parseInt(slot.time.split(':')[0]);
+                                return hour >= startHour && hour < endHour;
+                            });
+                        };
+
+                        const sessions = [
+                            { label: "Pagi (10AM - 1PM)", slots: filterSlots(10, 13), color: "bg-[#412986]" }, 
+                            { label: "Petang (2PM - 6PM)", slots: filterSlots(14, 18), color: "bg-[#412986]" },
+                            { label: "Malam (8PM - 11PM)", slots: filterSlots(20, 24), color: "bg-[#412986]" }  
+                        ];
+
+                        if (allSlots.length === 0) {
+                            return <p className="text-center text-gray-400 text-sm mt-4">Tiada slot tersedia untuk tarikh ini.</p>;
+                        }
+
+                        return sessions.map((session, index) => (
+                            session.slots.length > 0 && (
+                                <div key={index} className="rounded-xl overflow-hidden shadow-sm border border-gray-200 bg-white">
+                                    <div className={`${session.color} text-white px-6 py-4 font-bold text-lg`}>
+                                        {session.label}
                                     </div>
-                                    <div className="flex items-center gap-2 text-xs text-slate-500 font-medium bg-slate-100 w-fit px-2 py-1 rounded-lg">
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        {s.duration_minutes} Minit
+                                    <div className="p-6">
+                                        <div className="flex flex-wrap gap-x-8 gap-y-8">
+                                            {session.slots.map((slot, idx) => {
+                                                const isSelected = slot.time === selectedSlot;
+                                                const isDisabled = !slot.available;
+
+                                                return (
+                                                    <div key={idx} className="flex flex-col items-center gap-2">
+                                                        <button
+                                                            disabled={isDisabled}
+                                                            onClick={() => setSelectedSlot(slot.time)}
+                                                            className={`
+                                                                w-14 h-14 rounded-full flex items-center justify-center hover:scale-110 border-2 transition-all
+                                                                ${isDisabled 
+                                                                    ? "border-gray-200 text-gray-200 bg-gray-50 cursor-not-allowed" 
+                                                                    : isSelected
+                                                                        ? "border-[#412986] bg-[#412986] text-white shadow-lg scale-100"
+                                                                        : "border-[#412986] text-[#412986] bg-white hover:bg-purple-50 hover:cursor-pointer"
+                                                                }
+                                                            `}
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        </button>
+                                                        <span className={`text-xs font-bold font-mono ${isSelected ? "text-[#412986]" : "text-gray-500"}`}>
+                                                            {new Date(`2000-01-01 ${slot.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                             )
-                        })}
-                    </div>
-                </section>
+                        ));
+                    })()}
+                </div>
+            )}
+          </div>
+        )}
+        </div>
 
-                {/* 2. SECTION: TARIKH & MASA */}
-                <section className="space-y-6">
-                    <div>
-                        <h3 className="flex items-center gap-2 font-bold text-lg text-slate-800 mb-5">
-                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs">2</span>
-                            Tetapkan Tarikh
-                        </h3>
-                        <div className="relative">
-                            <input 
-                                type="date" 
-                                value={selectedDate} 
-                                min={new Date().toISOString().split('T')[0]} 
-                                onChange={e => setSelectedDate(e.target.value)} 
-                                className="w-full md:w-1/2 p-4 pl-12 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all text-slate-700 font-medium cursor-pointer"
-                            />
-                            <svg className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        </div>
-                    </div>
+        {/* STEP 3: MAKLUMAT DIRI */}
+        {selectedSlot && selectedDate && (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 animate-fade-in-up">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <span className="bg-indigo-100 text-indigo-600 w-8 h-8 rounded-full flex items-center justify-center text-sm">3</span>
+              Butiran Anda
+            </h2>
 
-                    {selectedDate && (
-                        <div className="animate-fade-in">
-                            <div className="flex justify-between items-end mb-4">
-                                <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Pilih Slot Masa</h4>
-                                <span className="text-xs text-slate-400">{slotList.filter(s => !s.booked).length} slot kosong</span>
-                            </div>
-                            
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                                {slotList.map((s, i) => {
-                                    const isSelected = selectedSlot === s.time;
-                                    return (
-                                        <button 
-                                            key={i} 
-                                            disabled={s.booked} 
-                                            onClick={() => setSelectedSlot(s.time)} 
-                                            className={`
-                                                relative p-3 text-sm font-semibold rounded-xl border transition-all
-                                                ${s.booked 
-                                                    ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed decoration-slate-300' 
-                                                    : isSelected
-                                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200 scale-105'
-                                                        : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'
-                                                }
-                                            `}
-                                        >
-                                            {formatTimeDisplay(s.time)}
-                                            {s.booked && <span className="absolute inset-0 flex items-center justify-center text-slate-300 opacity-40"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg></span>}
-                                        </button>
-                                    )
-                                })}
-                            </div>
-                            {slotList.length === 0 && !loading && (
-                                <div className="text-center p-6 bg-orange-50 text-orange-600 rounded-xl text-sm">Tiada slot kosong pada tarikh ini.</div>
-                            )}
-                        </div>
-                    )}
-                </section>
-
-                {/* 3. SECTION: CHECKOUT FORM */}
-                {selectedSlot && (
-                    <div className="animate-fade-in-up pt-6 border-t border-dashed border-slate-200">
-                        <h3 className="flex items-center gap-2 font-bold text-lg text-slate-800 mb-6">
-                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs">3</span>
-                            Butiran Akhir
-                        </h3>
-                        
-                        <div className="bg-gradient-to-br from-indigo-50 to-slate-50 p-6 rounded-2xl border border-indigo-100/50 mb-8">
-                            
-                            {/* Referral Code UI yang lebih kemas */}
-                            <div className="mb-6">
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kod Promo / Staff</label>
-                                <div className="flex gap-2">
-                                    <input 
-                                        type="text" 
-                                        value={promoCode}
-                                        onChange={(e) => setPromoCode(e.target.value)}
-                                        placeholder="Cth: STAFF023"
-                                        className="flex-1 p-3 border border-slate-300 rounded-xl uppercase font-mono text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white"
-                                    />
-                                    <button 
-                                        onClick={() => handleCheckCode()} 
-                                        type="button" 
-                                        className="bg-slate-800 text-white px-6 rounded-xl font-bold text-sm hover:bg-slate-700 transition-colors shadow-lg shadow-slate-200"
-                                    >
-                                        Check
-                                    </button>
-                                </div>
-                                {promoMessage && (
-                                    <div className={`flex items-center gap-2 text-xs mt-2 font-bold p-2 rounded-lg ${validReferral ? 'text-green-700 bg-green-50' : 'text-red-600 bg-red-50'}`}>
-                                        {promoMessage}
-                                    </div>
-                                )}
-                            </div>
-
-                            <form onSubmit={handleCheckout} className="space-y-4">
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-medium text-slate-500 ml-1">Nama Penuh</label>
-                                        <input type="text" placeholder="Ali bin Abu" required className="p-3 border border-slate-200 rounded-xl w-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" onChange={e=>setFormData({...formData,name:e.target.value})}/>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-medium text-slate-500 ml-1">No. WhatsApp</label>
-                                        <input type="tel" placeholder="0123456789" required className="p-3 border border-slate-200 rounded-xl w-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" onChange={e=>setFormData({...formData,phone:e.target.value})}/>
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-slate-500 ml-1">Alamat Email</label>
-                                    <input type="email" placeholder="ali@contoh.com" required className="p-3 border border-slate-200 rounded-xl w-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" onChange={e=>setFormData({...formData,email:e.target.value})}/>
-                                </div>
-
-                                <div className="pt-6">
-                                    <button 
-                                        type="submit" 
-                                        disabled={isProcessing} 
-                                        className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-xl shadow-indigo-200 hover:bg-indigo-700 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex justify-between px-8 items-center disabled:opacity-70 disabled:cursor-not-allowed group"
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            {isProcessing ? "Memproses..." : "SAHKAN TEMPAHAN"}
-                                            {!isProcessing && <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>}
-                                        </span>
-                                        <span className="text-lg bg-indigo-800/30 px-3 py-1 rounded-lg">RM{selectedService.price}</span>
-                                    </button>
-                                    <p className="text-center text-xs text-slate-400 mt-3 flex justify-center items-center gap-1">
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                                        Pembayaran selamat dijamin
-                                    </p>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+            <div className="bg-[#eff6ff] p-6 rounded-xl border border-blue-50 space-y-5">
+              
+              {/* --- BAHAGIAN KOD PROMO (DIBETULKAN) --- */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">KOD PROMO / STAFF</label>
+                <div className="flex gap-3">
+                    <input 
+                        type="text" 
+                        placeholder="CTH: STAFF023" 
+                        className="flex-1 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 outline-none text-gray-700 placeholder-gray-400 bg-white uppercase font-bold" 
+                        onChange={(e) => setFormData({...formData, referral: e.target.value.toUpperCase()})} 
+                        value={formData.referral} 
+                    />
+                    <button 
+                        type="button" 
+                        disabled={promoStatus === 'checking'}
+                        className="bg-[#1e293b] text-white font-bold px-6 rounded-lg hover:bg-black hover:cursor-pointer transition-colors disabled:bg-gray-400" 
+                        onClick={checkReferralCode}
+                    >
+                        {promoStatus === 'checking' ? 'Checking...' : 'Check'}
+                    </button>
+                </div>
+                {/* Mesej Status Kod */}
+                {promoMessage && (
+                    <p className={`text-xs font-bold mt-2 ${promoStatus === 'valid' ? 'text-green-600' : 'text-red-500'}`}>
+                        {promoMessage}
+                    </p>
                 )}
+              </div>
+              {/* ------------------------------------------- */}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div><label className="block text-xs font-bold text-gray-500 mb-2">Nama Penuh</label><input type="text" placeholder="Ali bin Abu" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 outline-none text-gray-700 bg-white placeholder-gray-400" onChange={(e) => setFormData({...formData, name: e.target.value})} /></div>
+                <div><label className="block text-xs font-bold text-gray-500 mb-2">No. WhatsApp</label><input type="tel" placeholder="0123456789" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 outline-none text-gray-700 bg-white placeholder-gray-400" onChange={(e) => setFormData({...formData, phone: e.target.value})} /></div>
+              </div>
+
+              <div><label className="block text-xs font-bold text-gray-500 mb-2">Alamat Email</label><input type="email" placeholder="ali@contoh.com" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 outline-none text-gray-700 bg-white placeholder-gray-400" onChange={(e) => setFormData({...formData, email: e.target.value})} /></div>
             </div>
-        </div>
-        
-        {/* FOOTER SIMPLE */}
-        <div className="text-center mt-8 pb-8 text-slate-400 text-xs">
-            &copy; 2026 Studio ABG Raya. All rights reserved.
-        </div>
+            
+            <div className="mt-8 bg-purple-50 p-4 rounded-xl border border-purple-100">
+                <div className="flex justify-between items-center mb-1"><span className="text-gray-600 text-sm">Pakej:</span><span className="font-bold text-sm">{selectedService.name}</span></div>
+                <div className="flex justify-between items-center mb-1"><span className="text-gray-600 text-sm">Tarikh:</span><span className="font-bold text-sm">{selectedDate}</span></div>
+                <div className="flex justify-between items-center mb-1"><span className="text-gray-600 text-sm">Masa:</span><span className="font-bold text-sm">{selectedSlot}</span></div>
+                <div className="border-t border-purple-200 my-2 pt-2 flex justify-between items-center text-lg">
+                    <span className="font-bold text-purple-900">Total:</span>
+                    <span className="font-black text-2xl text-[#412986]">RM{selectedService.price}</span>
+                </div>
+            </div>
+
+            <button 
+              onClick={handlePayment}
+              disabled={loading || !formData.name || !formData.phone}
+              className={`mt-6 w-full py-4 rounded-xl hover:cursor-pointer text-white font-bold text-lg shadow-xl transition-all ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-[#412986] hover:bg-[#301F63] hover:scale-[1.02]"}`}
+            >
+              {loading ? "Sedang Memproses..." : "💳 Teruskan ke Pembayaran"}
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
 
-// COMPONENT UTAMA (WRAPPER)
 export default function BookingPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-slate-500">Loading System...</div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-500">Loading System...</div>}>
             <BookingContent />
         </Suspense>
     );

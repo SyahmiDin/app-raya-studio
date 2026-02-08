@@ -22,7 +22,18 @@ export async function GET(request) {
 
     const packageName = session.line_items?.data?.[0]?.description || "Pakej Studio";
     const receiptUrl = session.payment_intent?.latest_charge?.receipt_url;
-    const info = session.metadata;
+    
+    // --- [FIX] KIRA HARGA SEBENAR DARI STRIPE ---
+    // Stripe bagi nilai dalam sen (cth: 10000 sen), bahagi 100 jadi RM100
+    const realAmountPaid = session.amount_total / 100;
+
+    // --- [FIX] GABUNGKAN DATA PENTING ---
+    // Kita create object info baru yang ada 'final_price_paid'
+    const info = {
+        ...session.metadata,
+        final_price_paid: realAmountPaid, // Frontend perlukan nilai ini!
+        receipt_url: receiptUrl
+    };
 
     // 2. SETUP PENGHANTAR (Guna akaun Admin Utama)
     const transporter = nodemailer.createTransport({
@@ -37,15 +48,13 @@ export async function GET(request) {
 
     // --- SENARAI STAFF YANG AKAN TERIMA NOTIFIKASI ---
     const staffEmails = [
-        "syahmi@dhdgroup.com.my",
-        "zaid@dhdgroup.com.my"       
+        "syahmi@dhdgroup.com.my"
     ];
-
 
     // 3. HANTAR EMAIL KE CLIENT (Resit)
     await transporter.sendMail({
        from: '"Studio ABG" <admin@dhdgroup.com.my>',
-       to: info.client_email, // Email client seorang sahaja
+       to: info.client_email, 
        subject: "Tempahan & Resit Bayaran",
        html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
@@ -85,7 +94,9 @@ export async function GET(request) {
         `
     });
 
-    return NextResponse.json({ success: true, bookingData: session.metadata });
+    // 5. RETURN DATA LENGKAP KE FRONTEND
+    // Frontend akan baca bookingData.final_price_paid untuk save ke DB
+    return NextResponse.json({ success: true, bookingData: info });
 
   } catch (err) {
     console.error("Error verify:", err);

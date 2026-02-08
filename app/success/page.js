@@ -34,7 +34,7 @@ function SuccessContent() {
             client_name: info.client_name,
             client_email: info.client_email,
             client_phone: info.client_phone,
-            service_id: info.service_id,
+            service_id: info.package_id,
             status: 'paid',
             stripe_payment_id: sessionId,
 
