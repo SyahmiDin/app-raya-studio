@@ -25,7 +25,7 @@ export async function POST(request) {
 
     // 3. Create Stripe Session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card", "fpx", "grabpay"], // Boleh tambah method lain
+      payment_method_types: ["card", "fpx", "grabpay"],
       line_items: [
         {
           price_data: {

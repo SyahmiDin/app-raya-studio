@@ -115,7 +115,7 @@ export default function Home() {
                     
                     <div className="flex justify-center mb-6">
                         <div className="text-xs bg-white/10 border border-white/20 inline-flex items-center gap-1 px-3 py-1 rounded-full text-gray-200 font-medium">
-                            ⏱️ {service.duration_minutes} Minit Sesi
+                            ⏱️ {service.duration_minutes} Minit/Sesi
                         </div>
                     </div>
                   </div>
@@ -127,7 +127,7 @@ export default function Home() {
                     className="w-full py-3 rounded-xl bg-[#412986]/40 text-white font-bold border-4 border-[#301F63] hover:bg-[#301F63] hover:scale-105 transition transform shadow-lg flex items-center justify-center gap-2 group"
                   >
                     <span>TEMPAH SEKARANG</span>
-                    <span className="group-hover:translate-x-1 transition-transform">➜</span>
+                    <span className="group-hover:translate-x-3 transition-transform">➜</span>
                   </Link>
 
                 </div>
@@ -137,7 +137,7 @@ export default function Home() {
         </div>
 
         {/* Promo Text */}
-        <div className="max-w-6xl bg-black/50 p-4 rounded-xl mb-4 animate-fade-in-up delay-100 border border-white/10">
+        <div className="max-w-6xl bg-black/50 py-4 px-18 rounded-xl mb-4 animate-fade-in-up delay-100 border border-white/10">
           <p className="text-white text-lg md:text-xl max-w-2xl drop-shadow-md italic animate-pulse">
             Harga promo 'Early Bird' terhad sehingga 20 Februari 2026 11.59 malam sahaja!
           </p>

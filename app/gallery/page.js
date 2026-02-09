@@ -120,7 +120,7 @@ function GalleryContent() {
     }
   }
 
-  // --- GANTI FUNCTION INI (DIRECT BULK DOWNLOAD) ---
+  // --- GANTI FUNCTION INI (DIRECT BULK DOWNLOAD + ANTI-CACHE) ---
   async function handleBulkDownload(bypassCheck = false) {
     if (!bypassCheck && !isPinVerified) return requestBulkDownload();
     if (photos.length === 0) return;
@@ -134,9 +134,11 @@ function GalleryContent() {
         const photo = photos[i];
         const filename = photo.key.split("/").pop();
         
-        // 1. Fetch Direct dari Cloudflare (Tak lalu server dah)
+        // 1. Fetch Direct dari Cloudflare
+        // PENTING: Tambah cache: 'no-store' supaya browser tak guna cache lama yang error CORS
         const response = await fetch(photo.url, {
-            mode: 'cors'
+            mode: 'cors',
+            cache: 'no-store' 
         });
         
         if (!response.ok) throw new Error("Network error");
@@ -152,7 +154,7 @@ function GalleryContent() {
 
     } catch (error) { 
         console.error(error);
-        alert("Gagal memproses Zip (Mungkin isu CORS atau Internet)."); 
+        alert("Gagal memproses Zip. Sila semak setting CORS Cloudflare."); 
     }
     setIsZipping(false);
   }
