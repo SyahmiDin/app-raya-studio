@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { motion } from "framer-motion";
 
 export default function Home() {
   const [services, setServices] = useState([]);
@@ -13,6 +14,28 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
+
+  // --- 2. CONFIG ANIMASI FRAMER MOTION ---
+  const textTitle = "MEMORI AIDILFITRI";
+  const letters = textTitle.split("");
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.04, delayChildren: 0.1 },
+    },
+  };
+
+  const letterVariants = {
+    hidden: { opacity: 0, x: -5 },
+    visible: { 
+      opacity: 1, 
+      x: 0,
+      transition: { type: "spring", damping: 2, stiffness: 100}
+    },
+  };
+  // --------------------------------------
 
   useEffect(() => {
     async function fetchServices() {
@@ -37,6 +60,17 @@ export default function Home() {
   return (
     <div className="relative min-h-screen flex flex-col font-sans">
 
+      <style>{`
+  @keyframes pendulumSwing {
+    0%, 100% { transform: rotate(8deg); }
+    50% { transform: rotate(-8deg); }
+  }
+  .animate-pendulum {
+    transform-origin: top center;
+    animation: pendulumSwing 2s ease-in-out infinite;
+  }
+`}</style>
+
       {/* BACKGROUND */}
       <div className="absolute inset-0 z-0">
         <img src="/bg.jpeg" alt="Background Studio" className="w-full h-full object-cover" />
@@ -51,13 +85,47 @@ export default function Home() {
       </nav>
 
       {/* MAIN CONTENT */}
-      <main className="relative z-10 flex-grow flex flex-col items-center justify-center text-center px-4 py-12">
-        <h1 className="text-5xl md:text-7xl font-black text-white mb-4 drop-shadow-lg">
-          MEMORI AIDILFITRI
-        </h1>
-        <p className="text-gray-200 text-lg md:text-xl max-w-2xl mb-12 drop-shadow-md">
-          Gambar raya berkualiti studio profesional. Cepat, selesa, dan harga mampu milik.
-        </p>
+      <main className="relative z-10 flex-grow flex flex-col items-center justify-center text-center px-18 py-12">
+        {/* --- TAJUK & SUBTAJUK DENGAN MOTION --- */}
+        <motion.h1 
+  className="relative z-10 text-3xl sm:text-5xl md:text-7xl font-black text-white mb-6 drop-shadow-lg flex items-start justify-center gap-2 md:gap-6 overflow-hidden py-4"
+  variants={containerVariants}
+  initial="hidden"
+  animate="visible"
+>
+  {/* Ketupat Kiri - Responsive Size */}
+  <img 
+    src="ketupat5.png" 
+    alt="Ketupat" 
+    className="w-12 h-12 sm:w-20 sm:h-20 md:w-32 md:h-32 mt-[-10px] md:mt-[-20px] animate-pendulum object-contain" 
+  />
+
+  {/* Teks Huruf per Huruf */}
+  <span className="flex flex-wrap justify-center">
+    {letters.map((char, index) => (
+      <motion.span key={index} variants={letterVariants} className="inline-block">
+        {char === " " ? "\u00A0" : char}
+      </motion.span>
+    ))}
+  </span>
+
+  {/* Ketupat Kanan - Responsive Size */}
+  <img 
+    src="ketupat5.png" 
+    alt="Ketupat" 
+    className="w-12 h-12 sm:w-20 sm:h-20 md:w-32 md:h-32 mt-[-10px] md:mt-[-20px] animate-pendulum object-contain" 
+  />
+</motion.h1>
+
+{/* 3. Paragraf Responsive */}
+<motion.p 
+  className="text-gray-200 text-base sm:text-lg md:text-xl max-w-xs sm:max-w-2xl mx-auto mb-12 drop-shadow-md px-4 text-center leading-relaxed"
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 1.5, duration: 0.8 }}
+>
+  Gambar raya berkualiti studio profesional. Cepat, selesa, dan harga mampu milik.
+</motion.p>
 
         <style>{`
           @keyframes customFadeIn {
@@ -69,6 +137,8 @@ export default function Home() {
             animation: customFadeIn 0.8s ease-out forwards;
           }
         `}</style>
+
+        
 
         {/* PAKEJ LIST */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full mb-12">
@@ -116,6 +186,11 @@ export default function Home() {
                     <div className="flex justify-center mb-6">
                         <div className="text-xs bg-white/10 border border-white/20 inline-flex items-center gap-1 px-3 py-1 rounded-full text-gray-200 font-medium">
                             ⏱️ {service.duration_minutes} Minit/Sesi
+                        </div>
+                    </div>
+                    <div className="flex justify-center mb-6">
+                        <div className="text-lg bg-black/20 inline-flex items-center gap-1 px-15 py-5 rounded-lg text-gray-200 font-medium text-left">
+                            - ⁠Unlimited Shot<br/> - ⁠Posing Guidance<br/>  - ⁠All edited photos<br/> - ⁠Send via cloud
                         </div>
                     </div>
                   </div>
