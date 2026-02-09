@@ -71,61 +71,61 @@ export default function Home() {
   }
 `}</style>
 
-      {/* BACKGROUND */}
-      <div className="absolute inset-0 z-0">
+      {/* BACKGROUND - Tukar absolute ke fixed supaya bg kekal penuh bila scroll di mobile */}
+      <div className="fixed inset-0 z-0">
         <img src="/bg.jpeg" alt="Background Studio" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/70"></div>
       </div>
 
       {/* NAVBAR */}
-      <nav className="relative z-40 w-full max-w-7xl mx-auto p-6 flex justify-between items-center text-white">
-        <div className="text-xl font-bold tracking-widest uppercase"> 
+      <nav className="relative z-40 w-full max-w-7xl mx-auto p-4 md:p-6 flex justify-between items-center text-white">
+        <div className="text-lg md:text-xl font-bold tracking-widest uppercase text-center w-full md:text-left md:w-auto"> 
           Studio ABG Raya 2026
         </div>
       </nav>
 
-      {/* MAIN CONTENT */}
-      <main className="relative z-10 flex-grow flex flex-col items-center justify-center text-center px-18 py-12">
+      {/* MAIN CONTENT - Ubah padding supaya mesra mobile (px-4) */}
+      <main className="relative z-10 flex-grow flex flex-col items-center justify-center text-center px-4 md:px-12 py-8 md:py-12">
         {/* --- TAJUK & SUBTAJUK DENGAN MOTION --- */}
         <motion.h1 
-  className="relative z-10 text-3xl sm:text-5xl md:text-7xl font-black text-white mb-6 drop-shadow-lg flex items-start justify-center gap-2 md:gap-6 overflow-hidden py-4"
-  variants={containerVariants}
-  initial="hidden"
-  animate="visible"
->
-  {/* Ketupat Kiri - Responsive Size */}
-  <img 
-    src="ketupat5.png" 
-    alt="Ketupat" 
-    className="w-12 h-12 sm:w-20 sm:h-20 md:w-32 md:h-32 mt-[-10px] md:mt-[-20px] animate-pendulum object-contain" 
-  />
+          className="relative z-10 text-3xl sm:text-5xl md:text-7xl font-black text-white mb-6 drop-shadow-lg flex items-start justify-center gap-2 md:gap-6 overflow-hidden py-4"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {/* Ketupat Kiri - Responsive Size */}
+          <img 
+            src="ketupat5.png" 
+            alt="Ketupat" 
+            className="w-10 h-10 sm:w-20 sm:h-20 md:w-32 md:h-32 mt-[-5px] md:mt-[-20px] animate-pendulum object-contain" 
+          />
 
-  {/* Teks Huruf per Huruf */}
-  <span className="flex flex-wrap justify-center">
-    {letters.map((char, index) => (
-      <motion.span key={index} variants={letterVariants} className="inline-block">
-        {char === " " ? "\u00A0" : char}
-      </motion.span>
-    ))}
-  </span>
+          {/* Teks Huruf per Huruf */}
+          <span className="flex flex-wrap justify-center">
+            {letters.map((char, index) => (
+              <motion.span key={index} variants={letterVariants} className="inline-block">
+                {char === " " ? "\u00A0" : char}
+              </motion.span>
+            ))}
+          </span>
 
-  {/* Ketupat Kanan - Responsive Size */}
-  <img 
-    src="ketupat5.png" 
-    alt="Ketupat" 
-    className="w-12 h-12 sm:w-20 sm:h-20 md:w-32 md:h-32 mt-[-10px] md:mt-[-20px] animate-pendulum object-contain" 
-  />
-</motion.h1>
+          {/* Ketupat Kanan - Responsive Size */}
+          <img 
+            src="ketupat5.png" 
+            alt="Ketupat" 
+            className="w-10 h-10 sm:w-20 sm:h-20 md:w-32 md:h-32 mt-[-5px] md:mt-[-20px] animate-pendulum object-contain" 
+          />
+        </motion.h1>
 
-{/* 3. Paragraf Responsive */}
-<motion.p 
-  className="text-gray-200 text-base sm:text-lg md:text-xl max-w-xs sm:max-w-2xl mx-auto mb-12 drop-shadow-md px-4 text-center leading-relaxed"
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ delay: 1.5, duration: 0.8 }}
->
-  Gambar raya berkualiti studio profesional. Cepat, selesa, dan harga mampu milik.
-</motion.p>
+        {/* 3. Paragraf Responsive */}
+        <motion.p 
+          className="text-gray-200 text-sm sm:text-lg md:text-xl max-w-xs sm:max-w-2xl mx-auto mb-12 drop-shadow-md px-2 text-center leading-relaxed"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.5, duration: 0.8 }}
+        >
+          Gambar raya berkualiti studio profesional. Cepat, selesa, dan harga mampu milik.
+        </motion.p>
 
         <style>{`
           @keyframes customFadeIn {
@@ -137,8 +137,6 @@ export default function Home() {
             animation: customFadeIn 0.8s ease-out forwards;
           }
         `}</style>
-
-        
 
         {/* PAKEJ LIST */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full mb-12">
@@ -189,14 +187,16 @@ export default function Home() {
                         </div>
                     </div>
                     <div className="flex justify-center mb-6">
-                        <div className="text-lg bg-black/20 inline-flex items-center gap-1 px-15 py-5 rounded-lg text-gray-200 font-medium text-left">
-                            - ⁠Unlimited Shot<br/> - ⁠Posing Guidance<br/>  - ⁠All edited photos<br/> - ⁠Send via cloud
+                        {/* Ubah px-15 kepada px-6 supaya muat mobile, dan tambah w-full */}
+                        <div className="text-lg bg-black/20 inline-flex items-center justify-center w-full px-6 py-5 rounded-lg text-gray-200 font-medium text-left">
+                           <div>
+                              - ⁠Unlimited Shot<br/> - ⁠Posing Guidance<br/>  - ⁠All edited photos<br/> - ⁠Send via cloud
+                           </div>
                         </div>
                     </div>
                   </div>
 
                   {/* --- BUTTON KHAS PADA SETIAP CARD --- */}
-                  {/* Kita hantar ID pakej guna query param (?package=ID) */}
                   <Link 
                     href={`/booking?package=${service.id}`}
                     className="w-full py-3 rounded-xl bg-[#412986]/40 text-white font-bold border-4 border-[#301F63] hover:bg-[#301F63] hover:scale-105 transition transform shadow-lg flex items-center justify-center gap-2 group"
@@ -211,9 +211,9 @@ export default function Home() {
           )}
         </div>
 
-        {/* Promo Text */}
-        <div className="max-w-6xl bg-black/50 py-4 px-18 rounded-xl mb-4 animate-fade-in-up delay-100 border border-white/10">
-          <p className="text-white text-lg md:text-xl max-w-2xl drop-shadow-md italic animate-pulse">
+        {/* Promo Text - Ubah padding supaya text tak terhimpit */}
+        <div className="max-w-6xl w-full bg-black/50 py-4 px-4 md:px-12 rounded-xl mb-4 animate-fade-in-up delay-100 border border-white/10">
+          <p className="text-white text-base md:text-xl drop-shadow-md italic animate-pulse">
             Harga promo 'Early Bird' terhad sehingga 20 Februari 2026 11.59 malam sahaja!
           </p>
         </div>
@@ -222,7 +222,7 @@ export default function Home() {
 
       {/* --- FOOTER --- */}
       <footer className="bg-gray-900 z-40 text-white py-6 text-center border-t border-gray-800">
-        <h3 className="font-black text-xl mb-2 tracking-widest">STUDIO ABG 2026</h3>
+        <h3 className="font-black text-lg md:text-xl mb-2 tracking-widest">STUDIO ABG 2026</h3>
         <p className="text-gray-500 text-xs">
           Hak Cipta Terpelihara © 2026 Al Bayan Global.
         </p>
@@ -232,7 +232,7 @@ export default function Home() {
       {isLoginOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsLoginOpen(false)}></div>
-          <div className="relative bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm transform transition-all scale-100">
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-sm transform transition-all scale-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Admin Access 🔐</h2>
             <form onSubmit={handleLogin} className="space-y-4">
               <input type="text" className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" />
