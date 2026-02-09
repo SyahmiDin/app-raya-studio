@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { FaWhatsapp } from "react-icons/fa";
 
 export default function MonitorPage() {
   const router = useRouter();
@@ -273,10 +274,7 @@ export default function MonitorPage() {
                     </div>
 
                     <div className="flex gap-2 pt-2">
-                        <a href={`tel:${selectedBooking.client_phone}`} className="flex-1 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold text-center hover:bg-gray-50 transition">
-                            📞 Call
-                        </a>
-                        <a href={`https://wa.me/${selectedBooking.client_phone.replace(/^0/,'60')}`} target="_blank" className="flex-1 bg-[#25D366] text-white py-3 rounded-xl font-bold text-center hover:bg-[#128C7E] shadow-lg shadow-green-100 transition flex items-center justify-center gap-2">
+                        <a href={`https://wa.me/${selectedBooking.client_phone.replace(/^0/,'60')}`} target="_blank" className="flex-1 bg-[#25D366] text-white py-3 rounded-xl font-bold text-center hover:bg-[#128C7E] shadow-lg shadow-green-100 transition flex items-center justify-center gap-2"><FaWhatsapp size={25}/>
                             <span>WhatsApp</span>
                         </a>
                     </div>

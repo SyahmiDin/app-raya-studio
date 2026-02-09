@@ -32,7 +32,7 @@ export default function Home() {
     visible: { 
       opacity: 1, 
       x: 0,
-      transition: { type: "spring", damping: 2, stiffness: 100}
+      transition: { type: "spring", damping: 1, stiffness: 150}
     },
   };
   // --------------------------------------
@@ -221,12 +221,42 @@ export default function Home() {
       </main>
 
       {/* --- FOOTER --- */}
-      <footer className="bg-gray-900 z-40 text-white py-6 text-center border-t border-gray-800">
-        <h3 className="font-black text-lg md:text-xl mb-2 tracking-widest">STUDIO ABG 2026</h3>
-        <p className="text-gray-500 text-xs">
-          Hak Cipta Terpelihara © 2026 Al Bayan Global.
-        </p>
-      </footer>
+      <footer className="bg-gray-900 z-40 text-white py-10 text-center border-t border-gray-800">
+  <div className="container mx-auto px-4">
+    
+    {/* TAJUK */}
+    <h3 className="font-black text-xl md:text-2xl mb-4 tracking-widest text-white">
+      STUDIO ABG 2026
+    </h3>
+
+    {/* ALAMAT (BOLEH KLIK) */}
+    <div className="flex justify-center mb-6">
+        <a 
+            href="https://www.google.com/maps/search/?api=1&query=60-2,+Jalan+Timur+6/2D,+Bandar+Baru+Enstek,+71760+Nilai,+Negeri+Sembilan"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex flex-col md:flex-row items-center gap-2 text-gray-400 hover:text-[#a78bfa] transition-colors duration-300"
+        >
+            {/* Icon Location */}
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            
+            {/* Teks Alamat */}
+            <p className="text-sm md:text-base leading-relaxed max-w-xs md:max-w-none">
+                60-2, Jalan Timur 6/2D, Bandar Baru Enstek,<br className="md:hidden" /> 71760 Nilai, Negeri Sembilan
+            </p>
+        </a>
+    </div>
+
+    {/* COPYRIGHT */}
+    <p className="text-gray-600 text-xs tracking-wider">
+      Hak Cipta Terpelihara © 2026 Al Bayan Global.
+    </p>
+
+  </div>
+</footer>
 
       {/* --- LOGIN MODAL (Tidak Berubah) --- */}
       {isLoginOpen && (
