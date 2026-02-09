@@ -235,54 +235,57 @@ function BookingContent() {
   const visibleServices = isPackageLocked && selectedService ? [selectedService] : services;
 
   return (
-    <div className="min-h-screen bg-indigo-100 py-8 px-4 sm:px-6 lg:px-8 font-sans text-gray-900">
+    // BACKGROUND CREAM (#FDFBF7) - TEMA RAYA CLASSIC
+    <div className="min-h-screen bg-indigo-100 py-6 px-4 sm:px-6 lg:px-8 font-sans text-gray-900 selection:bg-[#412986] selection:text-white">
         
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto space-y-6">
         
-        {/* HEADER: TAJUK */}
-        <div className="text-center mb-8 space-y-2">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
-                Studio Raya <span className="text-indigo-600">2026</span>
+        {/* HEADER */}
+        <div className="text-center py-8 relative">
+            {/* Dekorasi Garis Emas */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-1 bg-[#D4AF37] rounded-full opacity-50"></div>
+            
+            {/* FONT DIKEMBALIKAN KE ASAL (SANS-SERIF) TETAPI KEKAL BOLD/MODERN */}
+            <h1 className="text-4xl md:text-5xl font-extrabold text-[#412986] tracking-tight drop-shadow-sm mb-2">
+                Studio ABG Raya <span className="text-[#D4AF37]">2026</span>
             </h1>
-            <p className="text-slate-500 text-sm md:text-base">
-                Tempah slot fotografi anda dengan mudah & pantas.
+            <p className="text-gray-500 text-lg italic">
+                "Abadikan kenangan Syawal anda bersama kami"
             </p>
         </div>
 
-        {/* DATE PICKER */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col items-center justify-center gap-4">
+        {/* STEP 1: DATE PICKER */}
+        <div className="bg-white p-8 rounded-2xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-[#e5e0d8] flex flex-col items-center justify-center text-center relative overflow-hidden">
+          {/* Hiasan Bucu */}
+          <div className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-[#412986]/10 rounded-tl-xl"></div>
+          <div className="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-[#412986]/10 rounded-tr-xl"></div>
 
-          <h3 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Pilih Tarikh</h3>
+          <h3 className="text-xl font-bold text-gray-700 uppercase tracking-widest mb-4">Pilih Tarikh Sesi</h3>
 
-          <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
-                <label className="text-sm font-bold text-gray-600">Tarikh:</label>
+          <div className="relative group w-full max-w-xs mx-auto">
+            <div className="absolute -inset-1 bg-gradient-to-r from-[#412986] to-[#D4AF37] rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+            <div className="relative flex items-center gap-3 bg-white px-6 py-4 rounded-xl border border-gray-200 shadow-sm">
+                <span className="text-2xl">📅</span>
                 <input 
                     type="date" 
-                    className="bg-transparent border-none focus:ring-0 text-gray-900 font-bold outline-none cursor-pointer"
+                    className="bg-transparent border-none focus:ring-0 text-2xl md:text-3xl font-bold text-[#412986] outline-none cursor-pointer w-full text-center uppercase"
                     onChange={(e) => setSelectedDate(e.target.value)}
                     value={selectedDate}
                     min={new Date().toISOString().split("T")[0]}
                 />
             </div>
+          </div>
+          <p className="mt-3 text-xs text-gray-400 font-medium">Sila pastikan tarikh adalah betul</p>
         </div>
 
-        {/* STEP 1: PILIH PAKEJ */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 relative">
+        {/* STEP 2: PILIH PAKEJ */}
+        <div className="relative">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-10 h-10 rounded-full bg-[#412986] text-[#D4AF37] flex items-center justify-center font-bold text-lg shadow-lg shadow-purple-900/20">1</div>
+            <h2 className="text-2xl font-bold text-gray-800">Pilihan Pakej Anda</h2>
+          </div>
           
-          {isPackageLocked && (
-            <div className="absolute top-4 right-4 z-10">
-                <span className="bg-purple-100 text-[#412986] text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 border border-purple-200">
-                    🔒 Pakej Pilihan
-                </span>
-            </div>
-          )}
-
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <span className="bg-indigo-100 text-indigo-600 w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
-            Pakej Fotografi
-          </h2>
-          
-          <div className={`gap-4 ${isPackageLocked ? 'flex justify-center' : 'grid grid-cols-1 md:grid-cols-3'}`}>
+          <div className={`gap-6 ${isPackageLocked ? 'flex justify-center' : 'grid grid-cols-1 md:grid-cols-3'}`}>
             {visibleServices.map((service) => {
                  const originalPrice = Math.ceil(service.price / 0.9);
                  const isSelected = selectedService?.id === service.id;
@@ -297,27 +300,43 @@ function BookingContent() {
                             }
                         }}
                         className={`
-                        p-4 rounded-xl border-2 transition-all relative overflow-hidden
+                        p-6 rounded-2xl transition-all duration-300 relative overflow-hidden flex flex-col
                         ${isPackageLocked ? 'w-full max-w-sm' : ''} 
                         ${isSelected
-                            ? "border-[#412986] bg-purple-50 ring-1 ring-[#412986]" 
-                            : "border-gray-200 bg-white"
+                            ? "border-2 border-[#D4AF37] bg-white shadow-2xl shadow-[#412986]/10 transform -translate-y-1" 
+                            : "border border-gray-100 bg-white shadow-sm hover:shadow-md hover:border-[#412986]/30"
                         }
-                        ${!isPackageLocked ? 'cursor-pointer hover:border-purple-300' : ''}
+                        ${!isPackageLocked ? 'cursor-pointer' : ''}
                         `}
                     >
+                        {/* Header Warna Ungu */}
+                        <div className={`absolute top-0 left-0 right-0 h-2 ${isSelected ? 'bg-[#D4AF37]' : 'bg-[#412986]'}`}></div>
+
                         {isSelected && (
-                            <div className="absolute top-0 right-0 bg-[#412986] text-white text-xs px-2 py-1 rounded-bl-lg font-bold">SELECTED</div>
+                            <div className="absolute top-4 right-4 text-[#D4AF37]">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                            </div>
                         )}
 
-                        <h3 className="font-bold text-lg mb-1">{service.name}</h3>
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs text-gray-400 line-through">RM{originalPrice}</span>
-                            <span className="text-xl font-black text-[#412986]">RM{service.price}</span>
-                        </div>
-                        <p className="text-xs text-gray-500 mb-2">{service.description}</p>
-                        <div className="text-xs font-semibold bg-gray-100 inline-block px-2 py-1 rounded">
-                            ⏱️ {service.duration_minutes} Minit
+                        <div className="mt-4">
+                            <h3 className="font-bold text-xl text-gray-900 mb-1">{service.name}</h3>
+                            <div className="w-12 h-1 bg-gray-100 rounded-full mb-4"></div>
+                            
+                            <p className="text-sm text-gray-500 mb-6 leading-relaxed line-clamp-3">{service.description}</p>
+                            
+                            <div className="mt-auto pt-4 border-t border-dashed border-gray-200">
+                                <div className="flex justify-between items-end">
+                                    <div>
+                                        <p className="text-xs text-gray-400 line-through italic">RM{originalPrice}</p>
+                                        <p className="text-2xl font-extrabold text-[#412986]">RM{service.price}</p>
+                                    </div>
+                                    <div className="bg-[#412986]/5 text-[#412986] text-xs font-bold px-3 py-1 rounded-full border border-[#412986]/10">
+                                        ⏱️ {service.duration_minutes} Minit
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                  );
@@ -325,160 +344,219 @@ function BookingContent() {
           </div>
 
           {isPackageLocked && (
-            <div className="mt-6 text-center border-t border-gray-100 pt-4">
-                <a href="/" className="inline-block text-xs font-bold text-gray-600 bg-gray-100 px-4 py-2 rounded-full hover:bg-gray-200 transition">
+            <div className="mt-6 text-center">
+                <a href="/" className="inline-block text-xs font-bold text-[#412986] hover:text-[#D4AF37] border-b border-transparent hover:border-[#D4AF37] transition">
                     ← Pilih Pakej Lain
                 </a>
             </div>
           )}
         </div>
 
-        {/* STEP 2: PILIH SLOT MASA */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col gap-4">
-          <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <span className="bg-indigo-100 text-indigo-600 w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
-              Pilih Slot Masa
-            </h2>
-        {selectedService && (
-          <div id="calendar-section" className="animate-fade-in-up">
-            
-            {!selectedDate ? (
-                 <div className="text-center py-8 bg-gray-50 rounded-xl text-gray-400">Loading Calendar...</div>
-            ) : (
-                <div className="space-y-8 py-8">
-                    {(() => {
-                        const allSlots = generateTimeSlots();
-                        
-                        const filterSlots = (startHour, endHour) => {
-                            return allSlots.filter(slot => {
-                                const hour = parseInt(slot.time.split(':')[0]);
-                                return hour >= startHour && hour < endHour;
-                            });
-                        };
+        {/* STEP 3: PILIH SLOT MASA */}
+        <div className="relative pt-6">
+            <div className="flex items-center gap-4 mb-6">
+                <div className="w-10 h-10 rounded-full bg-[#412986] text-[#D4AF37] flex items-center justify-center font-bold text-lg shadow-lg shadow-purple-900/20">2</div>
+                <h2 className="text-2xl font-bold text-gray-800">Pilih Slot Masa</h2>
+            </div>
 
-                        const sessions = [
-                            { label: "Pagi (10AM - 1PM)", slots: filterSlots(10, 13), color: "bg-[#412986]" }, 
-                            { label: "Petang (2PM - 6PM)", slots: filterSlots(14, 18), color: "bg-[#412986]" },
-                            { label: "Malam (8PM - 11PM)", slots: filterSlots(20, 24), color: "bg-[#412986]" }  
-                        ];
+            {selectedService && (
+                <div id="calendar-section" className="animate-fade-in-up bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-[#e5e0d8]">
+                
+                {!selectedDate ? (
+                    <div className="text-center py-12 bg-[#FDFBF7] rounded-xl border border-dashed border-gray-300 text-gray-400 italic">
+                        Sila pilih tarikh di atas dahulu...
+                    </div>
+                ) : (
+                    <div className="space-y-8">
+                        {(() => {
+                            const allSlots = generateTimeSlots();
+                            
+                            const filterSlots = (startHour, endHour) => {
+                                return allSlots.filter(slot => {
+                                    const hour = parseInt(slot.time.split(':')[0]);
+                                    return hour >= startHour && hour < endHour;
+                                });
+                            };
 
-                        if (allSlots.length === 0) {
-                            return <p className="text-center text-gray-400 text-sm mt-4">Tiada slot tersedia untuk tarikh ini.</p>;
-                        }
+                            const sessions = [
+                                { label: "Sesi Pagi [10.00 AM - 1.00 PM]", slots: filterSlots(10, 13) }, 
+                                { label: "Sesi Petang [2.00 PM - 6.00 PM]", slots: filterSlots(14, 18) },
+                                { label: "Sesi Malam [8.00 PM - 11.00 PM]", slots: filterSlots(20, 24) }  
+                            ];
 
-                        return sessions.map((session, index) => (
-                            session.slots.length > 0 && (
-                                <div key={index} className="rounded-xl overflow-hidden shadow-sm border border-gray-200 bg-white">
-                                    <div className={`${session.color} text-white px-6 py-4 font-bold text-lg`}>
-                                        {session.label}
-                                    </div>
-                                    <div className="p-6">
-                                        <div className="flex flex-wrap gap-x-8 gap-y-8">
+                            if (allSlots.length === 0) {
+                                return <p className="text-center text-red-400 font-medium py-8 bg-red-50 rounded-xl">Maaf, semua slot telah penuh pada tarikh ini.</p>;
+                            }
+
+                            return sessions.map((session, index) => (
+                                session.slots.length > 0 && (
+                                    <div key={index}>
+                                        <h4 className="text-[#412986] font-bold uppercase tracking-wider text-lg mb-4 border-l-4 border-[#D4AF37] pl-3">
+                                            {session.label}
+                                        </h4>
+                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
                                             {session.slots.map((slot, idx) => {
                                                 const isSelected = slot.time === selectedSlot;
                                                 const isDisabled = !slot.available;
 
                                                 return (
-                                                    <div key={idx} className="flex flex-col items-center gap-2">
-                                                        <button
-                                                            disabled={isDisabled}
-                                                            onClick={() => setSelectedSlot(slot.time)}
-                                                            className={`
-                                                                w-14 h-14 rounded-full flex items-center justify-center hover:scale-110 border-2 transition-all
-                                                                ${isDisabled 
-                                                                    ? "border-gray-200 text-gray-200 bg-gray-50 cursor-not-allowed" 
-                                                                    : isSelected
-                                                                        ? "border-[#412986] bg-[#412986] text-white shadow-lg scale-100"
-                                                                        : "border-[#412986] text-[#412986] bg-white hover:bg-purple-50 hover:cursor-pointer"
-                                                                }
-                                                            `}
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                            </svg>
-                                                        </button>
-                                                        <span className={`text-xs font-bold font-mono ${isSelected ? "text-[#412986]" : "text-gray-500"}`}>
+                                                    <button
+                                                        key={idx}
+                                                        disabled={isDisabled}
+                                                        onClick={() => setSelectedSlot(slot.time)}
+                                                        className={`
+                                                            py-3 px-2 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center
+                                                            ${isDisabled 
+                                                                ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed decoration-slice" 
+                                                                : isSelected
+                                                                    ? "border-[#412986] bg-[#412986] text-white shadow-lg shadow-purple-900/30 scale-105 ring-2 ring-[#D4AF37] ring-offset-2"
+                                                                    : "border-[#412986]/20 bg-white text-[#412986] hover:bg-purple-50 hover:border-[#412986]"
+                                                            }
+                                                        `}
+                                                    >
+                                                        <span className={`text-sm font-bold ${isDisabled ? "" : "font-mono"}`}>
                                                             {new Date(`2000-01-01 ${slot.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                                                         </span>
-                                                    </div>
+                                                        {isSelected && <span className="text-[10px] text-[#D4AF37] mt-1">Dipilih</span>}
+                                                    </button>
                                                 );
                                             })}
                                         </div>
                                     </div>
-                                </div>
-                            )
-                        ));
-                    })()}
+                                )
+                            ));
+                        })()}
+                    </div>
+                )}
                 </div>
             )}
-          </div>
-        )}
         </div>
 
-        {/* STEP 3: MAKLUMAT DIRI */}
+        {/* STEP 4: MAKLUMAT DIRI & PAYMENT */}
         {selectedSlot && selectedDate && (
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 animate-fade-in-up">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <span className="bg-indigo-100 text-indigo-600 w-8 h-8 rounded-full flex items-center justify-center text-sm">3</span>
-              Butiran Anda
-            </h2>
-
-            <div className="bg-[#eff6ff] p-6 rounded-xl border border-blue-50 space-y-5">
-              
-              {/* --- BAHAGIAN KOD PROMO (DIBETULKAN) --- */}
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">KOD PROMO / STAFF</label>
-                <div className="flex gap-3">
-                    <input 
-                        type="text" 
-                        placeholder="CTH: STAFF023" 
-                        className="flex-1 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 outline-none text-gray-700 placeholder-gray-400 bg-white uppercase font-bold" 
-                        onChange={(e) => setFormData({...formData, referral: e.target.value.toUpperCase()})} 
-                        value={formData.referral} 
-                    />
-                    <button 
-                        type="button" 
-                        disabled={promoStatus === 'checking'}
-                        className="bg-[#1e293b] text-white font-bold px-6 rounded-lg hover:bg-black hover:cursor-pointer transition-colors disabled:bg-gray-400" 
-                        onClick={checkReferralCode}
-                    >
-                        {promoStatus === 'checking' ? 'Checking...' : 'Check'}
-                    </button>
-                </div>
-                {/* Mesej Status Kod */}
-                {promoMessage && (
-                    <p className={`text-xs font-bold mt-2 ${promoStatus === 'valid' ? 'text-green-600' : 'text-red-500'}`}>
-                        {promoMessage}
-                    </p>
-                )}
-              </div>
-              {/* ------------------------------------------- */}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div><label className="block text-xs font-bold text-gray-500 mb-2">Nama Penuh</label><input type="text" placeholder="Ali bin Abu" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 outline-none text-gray-700 bg-white placeholder-gray-400" onChange={(e) => setFormData({...formData, name: e.target.value})} /></div>
-                <div><label className="block text-xs font-bold text-gray-500 mb-2">No. WhatsApp</label><input type="tel" placeholder="0123456789" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 outline-none text-gray-700 bg-white placeholder-gray-400" onChange={(e) => setFormData({...formData, phone: e.target.value})} /></div>
-              </div>
-
-              <div><label className="block text-xs font-bold text-gray-500 mb-2">Alamat Email</label><input type="email" placeholder="ali@contoh.com" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-200 outline-none text-gray-700 bg-white placeholder-gray-400" onChange={(e) => setFormData({...formData, email: e.target.value})} /></div>
-            </div>
+          <div className="pt-6 animate-fade-in-up pb-12">
             
-            <div className="mt-8 bg-purple-50 p-4 rounded-xl border border-purple-100">
-                <div className="flex justify-between items-center mb-1"><span className="text-gray-600 text-sm">Pakej:</span><span className="font-bold text-sm">{selectedService.name}</span></div>
-                <div className="flex justify-between items-center mb-1"><span className="text-gray-600 text-sm">Tarikh:</span><span className="font-bold text-sm">{selectedDate}</span></div>
-                <div className="flex justify-between items-center mb-1"><span className="text-gray-600 text-sm">Masa:</span><span className="font-bold text-sm">{selectedSlot}</span></div>
-                <div className="border-t border-purple-200 my-2 pt-2 flex justify-between items-center text-lg">
-                    <span className="font-bold text-purple-900">Total:</span>
-                    <span className="font-black text-2xl text-[#412986]">RM{selectedService.price}</span>
-                </div>
+            {/* Tajuk Section */}
+            <div className="flex items-center gap-4 mb-6">
+                <div className="w-10 h-10 rounded-full bg-[#412986] text-[#D4AF37] flex items-center justify-center font-bold text-lg shadow-lg shadow-purple-900/20">3</div>
+                <h2 className="text-2xl font-bold text-gray-800">Butiran Anda</h2>
             </div>
 
-            <button 
-              onClick={handlePayment}
-              disabled={loading || !formData.name || !formData.phone}
-              className={`mt-6 w-full py-4 rounded-xl hover:cursor-pointer text-white font-bold text-lg shadow-xl transition-all ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-[#412986] hover:bg-[#301F63] hover:scale-[1.02]"}`}
-            >
-              {loading ? "Sedang Memproses..." : "💳 Teruskan ke Pembayaran"}
-            </button>
+            {/* Container Utama (Putih) */}
+            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100">
+                
+                {/* 1. SECTION FORM INPUT (Latar Belakang Kelabu Cair) */}
+                <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-5">
+                    
+                    {/* A. KOD PROMO (Paling Atas) */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Kod Promo / Staff</label>
+                        <div className="flex gap-3">
+                            <input 
+                                type="text" 
+                                placeholder="CTH: STAFF023" 
+                                className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#412986] outline-none text-gray-700 bg-white placeholder-gray-400 font-bold uppercase" 
+                                onChange={(e) => setFormData({...formData, referral: e.target.value.toUpperCase()})} 
+                                value={formData.referral} 
+                            />
+                            <button 
+                                type="button" 
+                                disabled={promoStatus === 'checking'}
+                                className="bg-[#1e293b] text-white font-bold px-6 rounded-lg hover:bg-black transition-colors disabled:opacity-50 min-w-[100px]" 
+                                onClick={checkReferralCode}
+                            >
+                                {promoStatus === 'checking' ? '...' : 'Check'}
+                            </button>
+                        </div>
+                        {promoMessage && (
+                            <p className={`text-xs font-bold mt-2 ${promoStatus === 'valid' ? 'text-green-600' : 'text-red-500'}`}>
+                                {promoMessage}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* B. NAMA & WHATSAPP (Sebaris Desktop, Stack Mobile) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-2">Nama Penuh</label>
+                            <input 
+                                type="text" 
+                                placeholder="Ali bin Abu" 
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#412986] outline-none text-gray-700 bg-white placeholder-gray-400" 
+                                onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-2">No. WhatsApp</label>
+                            <input 
+                                type="tel" 
+                                placeholder="0123456789" 
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#412986] outline-none text-gray-700 bg-white placeholder-gray-400" 
+                                onChange={(e) => setFormData({...formData, phone: e.target.value})} 
+                            />
+                        </div>
+                    </div>
+
+                    {/* C. EMAIL (Full Width) */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-2">Alamat Email</label>
+                        <input 
+                            type="email" 
+                            placeholder="ali@contoh.com" 
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#412986] outline-none text-gray-700 bg-white placeholder-gray-400" 
+                            onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                        />
+                    </div>
+                </div>
+
+                {/* 2. SECTION SUMMARY (Kotak Ungu Cair) */}
+                <div className="mt-6 bg-[#faf5ff] p-6 rounded-xl border border-purple-100">
+                    <div className="flex justify-between items-start mb-2">
+                        <span className="text-gray-600 font-medium text-sm">Pakej:</span>
+                        <span className="font-bold text-sm text-gray-900 text-right">{selectedService.name}</span>
+                    </div>
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-600 font-medium text-sm">Tarikh:</span>
+                        <span className="font-bold text-sm text-gray-900">{selectedDate}</span>
+                    </div>
+                    <div className="flex justify-between items-center mb-4">
+                        <span className="text-gray-600 font-medium text-sm">Masa:</span>
+                        <span className="font-bold text-sm text-gray-900">
+                            {new Date(`2000-01-01 ${selectedSlot}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                        </span>
+                    </div>
+                    
+                    {/* Garis Pemisah */}
+                    <div className="border-t border-purple-200 my-4"></div>
+
+                    {/* Total */}
+                    <div className="flex justify-between items-center">
+                        <span className="font-bold text-purple-900 text-lg">Total:</span>
+                        <span className="font-extrabold text-2xl text-[#412986]">RM{selectedService.price}</span>
+                    </div>
+                </div>
+
+                {/* 3. BUTTON PAYMENT (Paling Bawah) */}
+                <button 
+                    onClick={handlePayment}
+                    disabled={loading || !formData.name || !formData.phone}
+                    className={`mt-6 w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-2
+                        ${loading 
+                            ? "bg-gray-400 cursor-not-allowed text-white" 
+                            : "bg-[#412986] text-white hover:bg-[#301F63] hover:-translate-y-1"
+                        }
+                    `}
+                >
+                    {loading ? (
+                        "Sedang Memproses..." 
+                    ) : (
+                        <>
+                            💳 Teruskan ke Pembayaran
+                        </>
+                    )}
+                </button>
+
+            </div>
           </div>
         )}
 
@@ -489,7 +567,7 @@ function BookingContent() {
 
 export default function BookingPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-500">Loading System...</div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[#412986] animate-pulse">Memuatkan Sistem Tempahan...</div>}>
             <BookingContent />
         </Suspense>
     );

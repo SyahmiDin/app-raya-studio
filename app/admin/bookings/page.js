@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { FaWhatsapp } from "react-icons/fa";
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState([]);
@@ -75,7 +76,6 @@ export default function AdminBookingsPage() {
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Senarai Tempahan</h1>
-            <p className="text-gray-500 text-sm">Uruskan jadual studio anda.</p>
           </div>
           <div className="flex gap-2">
              <a href="/admin/promo" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-bold text-sm shadow transition">
@@ -175,7 +175,7 @@ export default function AdminBookingsPage() {
                         )}
                       </td>
                       <td className="p-4 flex justify-center gap-2">
-                        <a href={getWhatsappLink(book.client_phone, book.client_name, formatDate(book.booking_date), book.start_time)} target="_blank" className="w-9 h-9 flex items-center justify-center bg-green-500 text-white rounded-lg hover:bg-green-600 shadow-sm transition" title="WhatsApp Client">📞</a>
+                        <a href={getWhatsappLink(book.client_phone, book.client_name, formatDate(book.booking_date), book.start_time)} target="_blank" className="w-9 h-9 flex items-center justify-center bg-green-500 text-white rounded-lg hover:bg-green-600 shadow-sm transition" title="WhatsApp Client"><FaWhatsapp size={20} /></a>
                         <button onClick={() => handleDelete(book.id, book.client_name)} className="w-9 h-9 flex items-center justify-center bg-white border border-red-200 text-red-500 rounded-lg hover:bg-red-50 hover:text-red-700 transition" title="Padam Booking">🗑️</button>
                       </td>
                     </tr>
