@@ -288,7 +288,7 @@ export default function AdminPage() {
               <button 
                 onClick={handleBulkUpload} 
                 disabled={uploading || selectedFiles.length === 0} 
-                className="w-full text-white font-bold py-3 md:py-4 rounded-xl disabled:opacity-50 transition transform active:scale-[0.98] shadow-lg text-base md:text-lg flex justify-center items-center gap-2"
+                className="w-full text-white font-bold py-3 md:py-4 rounded-xl disabled:opacity-50 transition transform active:scale-[0.98] shadow-lg text-base md:text-lg flex justify-center items-center gap-2 hover:cursor-pointer"
                 style={{ backgroundColor: THEME_COLOR }}
               >
                 {uploading ? `Sedang Memuat Naik...` : `🚀 Muat Naik Album`}
@@ -364,12 +364,12 @@ export default function AdminPage() {
                 🌙
             </div>
             
-            <h2 className="text-xl md:text-2xl font-serif font-bold text-gray-800 mb-2">Alhamdulillah!</h2>
+            <h2 className="text-xl md:text-2xl font-serif font-bold text-gray-800 mb-2">Siap!</h2>
             <p className="text-gray-500 text-xs md:text-sm mb-6">Album berjaya dimuat naik.</p>
             
             <div className="bg-gray-50 rounded-xl p-4 md:p-5 mb-6 md:mb-8 text-left border border-dashed border-gray-300 relative">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white px-3 text-[10px] md:text-xs font-bold text-gray-400 tracking-widest uppercase">
-                  Tiket Raya
+                  Gallery Baharu
               </div>
               <div className="flex justify-between border-b pb-3 mb-3 border-gray-200">
                 <span className="text-xs text-gray-400 uppercase font-bold">Keluarga</span>

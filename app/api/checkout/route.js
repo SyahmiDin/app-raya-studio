@@ -49,7 +49,6 @@ export async function POST(request) {
                 }, { status: 409 });
             } 
             
-            // Kalau dah lama (> 15 minit), bermakna user tu lari/cancel. 
             // Kita DELETE slot pending tu supaya user baru boleh masuk.
             await supabase.from('bookings').delete().eq('id', booking.id);
         }
