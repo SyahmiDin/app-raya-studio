@@ -42,10 +42,10 @@ export async function POST(request) {
             const currentTime = new Date().getTime();
             const diffMinutes = (currentTime - createdTime) / 1000 / 60;
 
-            // Kalau baru lagi (< 15 minit), kita anggap slot ni "Dipegang" (Reserved)
-            if (diffMinutes < 15) {
+            // Kalau baru lagi (< 10 minit), kita anggap slot ni "Dipegang" (Reserved)
+            if (diffMinutes < 10) {
                 return NextResponse.json({ 
-                    error: "Slot sedang dipegang oleh pelanggan lain. Sila cuba 15 minit lagi jika mereka tidak meneruskan bayaran." 
+                    error: "Slot sedang dipegang oleh pelanggan lain. Sila cuba 10 minit lagi jika mereka tidak meneruskan bayaran." 
                 }, { status: 409 });
             } 
             
@@ -56,8 +56,8 @@ export async function POST(request) {
     }
 
     // --- 2. LOCK SLOT (INSERT PENDING) ---
-    // Kita simpan dulu di DB sebelum generate Stripe!
-    // Ini yang akan menghalang user kedua daripada masuk.
+    // simpan dulu di DB sebelum generate Stripe!
+    // halang user kedua daripada masuk.
     const { data: newBooking, error: insertError } = await supabase
         .from('bookings')
         .insert([{
