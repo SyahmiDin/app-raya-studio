@@ -1,29 +1,89 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-
-// Pastikan Key Stripe Wujud
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("STRIPE_SECRET_KEY missing in environment variables");
-}
+import { createClient } from "@supabase/supabase-js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 export async function POST(request) {
   try {
-    // 1. Terima Data dari Frontend
     const body = await request.json();
     const { service, date, time, customer } = body;
 
-    // Safety Check: Pastikan data wujud
     if (!service || !date || !time) {
         return NextResponse.json({ error: "Missing Booking Data" }, { status: 400 });
     }
 
-    // 2. Tentukan Origin (PENTING UNTUK REDIRECT)
-    // Ini automatik detect sama ada kita di localhost atau domain sebenar
     const origin = request.headers.get("origin") || "http://localhost:3000";
 
-    // 3. Create Stripe Session
+    // --- 1. CHECK KEKOSONGAN & BERSIHKAN SLOT EXPIRED ---
+    
+    // Cari booking sedia ada (Paid atau Pending)
+    const { data: existingBookings, error: fetchError } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('booking_date', date)
+        .eq('start_time', time);
+
+    if (fetchError) throw new Error("Database Error");
+
+    // Jika ada booking...
+    if (existingBookings && existingBookings.length > 0) {
+        const booking = existingBookings[0];
+
+        // A. Kalau dah PAID, memang tak boleh kacau.
+        if (booking.status === 'paid') {
+            return NextResponse.json({ error: "Maaf, slot ini telah penuh." }, { status: 409 });
+        }
+
+        // B. Kalau PENDING... check masa dia.
+        if (booking.status === 'pending') {
+            const createdTime = new Date(booking.created_at).getTime();
+            const currentTime = new Date().getTime();
+            const diffMinutes = (currentTime - createdTime) / 1000 / 60;
+
+            // Kalau baru lagi (< 15 minit), kita anggap slot ni "Dipegang" (Reserved)
+            if (diffMinutes < 15) {
+                return NextResponse.json({ 
+                    error: "Slot sedang dipegang oleh pelanggan lain. Sila cuba 15 minit lagi jika mereka tidak meneruskan bayaran." 
+                }, { status: 409 });
+            } 
+            
+            // Kalau dah lama (> 15 minit), bermakna user tu lari/cancel. 
+            // Kita DELETE slot pending tu supaya user baru boleh masuk.
+            await supabase.from('bookings').delete().eq('id', booking.id);
+        }
+    }
+
+    // --- 2. LOCK SLOT (INSERT PENDING) ---
+    // Kita simpan dulu di DB sebelum generate Stripe!
+    // Ini yang akan menghalang user kedua daripada masuk.
+    const { data: newBooking, error: insertError } = await supabase
+        .from('bookings')
+        .insert([{
+            booking_date: date,
+            start_time: time,
+            client_name: customer.name,
+            client_email: customer.email,
+            client_phone: customer.phone,
+            service_id: service.id,
+            status: 'pending', // <--- PENTING: Status Pending
+            final_price: service.price,
+            referral_code: customer.referral || null
+        }])
+        .select()
+        .single();
+
+    if (insertError) {
+        // Kalau error constraint (maknanya ada orang lain insert milisaat yang sama)
+        if (insertError.code === '23505') {
+            return NextResponse.json({ error: "Slot baru sahaja diambil orang lain." }, { status: 409 });
+        }
+        throw new Error(insertError.message);
+    }
+
+    // --- 3. CREATE STRIPE SESSION ---
+    // Kita set masa expired Stripe 30 minit (lebih sikit dari db 15 minit takpe)
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card", "fpx", "grabpay"],
       line_items: [
@@ -33,39 +93,39 @@ export async function POST(request) {
             product_data: {
               name: service.name,
               description: `${date} @ ${time} (${service.duration_minutes} Minit)`,
-              // Boleh letak gambar jika ada: images: [service.image_url],
             },
-            unit_amount: Math.round(service.price * 100), // Stripe kira dalam sen (RM100 = 10000 sen)
+            unit_amount: Math.round(service.price * 100),
           },
           quantity: 1,
         },
       ],
       mode: "payment",
+      expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // Link mati lepas 30 minit
       
-      // Simpan data booking dalam metadata (Supaya boleh save ke DB lepas bayar)
+      // Kita hantar ID Booking yang kita baru create tadi
       metadata: {
+        booking_id: newBooking.id, // <--- KITA SIMPAN ID INI
         booking_date: date,
         start_time: time,
         client_name: customer.name,
         client_email: customer.email,
         client_phone: customer.phone,
         package_name: service.name,
-        package_id: service.id,
-        duration: service.duration_minutes,
         price: service.price,
         referral_code: customer.referral || "",
       },
 
-      // URL Redirect (Guna variable origin tadi)
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/booking`,
+      cancel_url: `${origin}/booking`, // Kalau cancel, slot pending akan expired sendiri nanti
     });
 
-    // 4. Return Session ID ke Frontend
+    // Update booking tadi dengan Stripe ID (untuk rujukan)
+    await supabase.from('bookings').update({ stripe_payment_id: session.id }).eq('id', newBooking.id);
+
     return NextResponse.json({ url: session.url });
 
   } catch (err) {
-    console.error("STRIPE API ERROR:", err); // Ini akan keluar di Terminal VS Code (Bukan browser)
+    console.error("CHECKOUT ERROR:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
