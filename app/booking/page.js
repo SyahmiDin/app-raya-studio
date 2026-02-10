@@ -22,7 +22,7 @@ function BookingContent() {
   const [promoStatus, setPromoStatus] = useState(null); // null, 'checking', 'valid', 'invalid'
   const [promoMessage, setPromoMessage] = useState("");
 
-  // UBAH: takenSlots sekarang simpan object {start, end}, bukan string masa sahaja
+  // UBAH: takenSlots sekarang simpan object lengkap {start, end, status}, bukan range masa sahaja
   const [takenSlots, setTakenSlots] = useState([]);
   
   const [isPackageLocked, setIsPackageLocked] = useState(false);
@@ -81,21 +81,27 @@ function BookingContent() {
 
   }, [searchParams]);
 
-  // --- 3. FETCH TAKEN SLOTS (LOGIC BARU) ---
+  // --- 3. FETCH TAKEN SLOTS (LOGIC BARU - AMBIL STATUS JUGA) ---
   useEffect(() => {
     if (selectedService && selectedDate) {
       async function fetchSlots() {
+        // Kita ambil status booking juga ('paid' atau 'pending')
         const { data } = await supabase
           .from('bookings')
-          .select('start_time, services(duration_minutes)') 
+          .select('start_time, status, services(duration_minutes)') 
           .eq('booking_date', selectedDate)
-          .eq('status', 'paid');
+          .in('status', ['paid', 'pending']); // Ambil dedua status
 
         if (data) {
           const blockedRanges = data.map(b => {
              const start = timeToMinutes(b.start_time.slice(0, 5));
              const duration = b.services?.duration_minutes || 30; 
-             return { start: start, end: start + duration + 5 }; 
+             
+             return { 
+                 start: start, 
+                 end: start + duration + 5, // +5 minit buffer
+                 status: b.status // Simpan status ('paid' atau 'pending')
+             }; 
           });
           setTakenSlots(blockedRanges);
         }
@@ -104,7 +110,7 @@ function BookingContent() {
     }
   }, [selectedDate, selectedService]);
 
-  // --- GENERATE TIME SLOTS (LOGIC BARU - CHECK OVERLAP) ---
+  // --- GENERATE TIME SLOTS (LOGIC BARU - CHECK STATUS) ---
   const generateTimeSlots = () => {
     if (!selectedService) return [];
     
@@ -123,13 +129,20 @@ function BookingContent() {
         const myStart = currentMin;
         const myEnd = currentMin + myDuration + gap; 
 
-        const isTaken = takenSlots.some(booked => {
+        // Cari jika slot ini bertindih dengan mana-mana booking
+        const overlappingBooking = takenSlots.find(booked => {
             return myStart < booked.end && myEnd > booked.start;
         });
 
+        // Tentukan status slot
+        let slotStatus = 'available'; // Default
+        if (overlappingBooking) {
+            slotStatus = overlappingBooking.status; // 'paid' atau 'pending'
+        }
+
         slots.push({ 
             time: timeLabel, 
-            available: !isTaken 
+            status: slotStatus // Simpan status spesifik
         });
 
         currentMin += (myDuration + gap); 
@@ -219,18 +232,15 @@ function BookingContent() {
 
   return (
     // BACKGROUND CREAM (#FDFBF7) - TEMA RAYA CLASSIC
-    // Added 'flex flex-col' to allow footer to sit at bottom
     <div className="min-h-screen bg-indigo-100 font-sans text-gray-900 selection:bg-[#412986] selection:text-white flex flex-col justify-between">
         
-      {/* WRAPPER CONTENT (Padding applied here so footer is not affected) */}
+      {/* WRAPPER CONTENT */}
       <div className="py-6 px-4 sm:px-6 lg:px-8 flex-grow">
         <div className="max-w-4xl mx-auto space-y-6">
             
             {/* HEADER */}
             <div className="text-center py-8 relative">
-                {/* Dekorasi Garis Emas */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-1 bg-[#D4AF37] rounded-full opacity-50"></div>
-                
                 <h1 className="text-4xl md:text-5xl font-extrabold text-[#412986] tracking-tight drop-shadow-sm mb-2">
                     Studio ABG Raya <span className="text-[#D4AF37]">2026</span>
                 </h1>
@@ -241,100 +251,96 @@ function BookingContent() {
 
             {/* STEP 1: DATE PICKER */}
             <div className="bg-white p-8 rounded-2xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-[#e5e0d8] flex flex-col items-center justify-center text-center relative overflow-hidden">
-            {/* Hiasan Bucu */}
-            <div className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-[#412986]/10 rounded-tl-xl"></div>
-            <div className="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-[#412986]/10 rounded-tr-xl"></div>
+                <div className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-[#412986]/10 rounded-tl-xl"></div>
+                <div className="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-[#412986]/10 rounded-tr-xl"></div>
 
-            <h3 className="text-xl font-bold text-gray-700 uppercase tracking-widest mb-4">Pilih Tarikh Sesi</h3>
+                <h3 className="text-xl font-bold text-gray-700 uppercase tracking-widest mb-4">Pilih Tarikh Sesi</h3>
 
-            <div className="relative group w-full max-w-xs mx-auto">
-                <div className="absolute -inset-1 bg-gradient-to-r from-[#412986] to-[#D4AF37] rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                <div className="relative flex items-center gap-3 bg-white px-6 py-4 rounded-xl border border-gray-200 shadow-sm">
-                    <span className="text-2xl">📅</span>
-                    <input 
-                        type="date" 
-                        className="bg-transparent border-none focus:ring-0 text-2xl md:text-3xl font-bold text-[#412986] outline-none cursor-pointer w-full text-center uppercase"
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        value={selectedDate}
-                        min={new Date().toISOString().split("T")[0]}
-                    />
+                <div className="relative group w-full max-w-xs mx-auto">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-[#412986] to-[#D4AF37] rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                    <div className="relative flex items-center gap-3 bg-white px-6 py-4 rounded-xl border border-gray-200 shadow-sm">
+                        <span className="text-2xl">📅</span>
+                        <input 
+                            type="date" 
+                            className="bg-transparent border-none focus:ring-0 text-2xl md:text-3xl font-bold text-[#412986] outline-none cursor-pointer w-full text-center uppercase"
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            value={selectedDate}
+                            min={new Date().toISOString().split("T")[0]}
+                        />
+                    </div>
                 </div>
-            </div>
-            <p className="mt-3 text-xs text-gray-400 font-medium">Sila pastikan tarikh adalah betul</p>
+                <p className="mt-3 text-xs text-gray-400 font-medium">Sila pastikan tarikh adalah betul</p>
             </div>
 
             {/* STEP 2: PILIH PAKEJ */}
             <div className="relative">
-            <div className="flex items-center gap-4 mb-6">
-                <div className="w-10 h-10 rounded-full bg-[#412986] text-[#D4AF37] flex items-center justify-center font-bold text-lg shadow-lg shadow-purple-900/20">1</div>
-                <h2 className="text-2xl font-bold text-gray-800">Pilihan Pakej Anda</h2>
-            </div>
-            
-            <div className={`gap-6 ${isPackageLocked ? 'flex justify-center' : 'grid grid-cols-1 md:grid-cols-3'}`}>
-                {visibleServices.map((service) => {
-                    const originalPrice = Math.ceil(service.price / 0.9);
-                    const isSelected = selectedService?.id === service.id;
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="w-10 h-10 rounded-full bg-[#412986] text-[#D4AF37] flex items-center justify-center font-bold text-lg shadow-lg shadow-purple-900/20">1</div>
+                    <h2 className="text-2xl font-bold text-gray-800">Pilihan Pakej Anda</h2>
+                </div>
+                
+                <div className={`gap-6 ${isPackageLocked ? 'flex justify-center' : 'grid grid-cols-1 md:grid-cols-3'}`}>
+                    {visibleServices.map((service) => {
+                        const originalPrice = Math.ceil(service.price / 0.9);
+                        const isSelected = selectedService?.id === service.id;
 
-                    return (
-                        <div 
-                            key={service.id}
-                            onClick={() => {
-                                if (!isPackageLocked) {
-                                    setSelectedService(service);
-                                    setSelectedSlot(null);
+                        return (
+                            <div 
+                                key={service.id}
+                                onClick={() => {
+                                    if (!isPackageLocked) {
+                                        setSelectedService(service);
+                                        setSelectedSlot(null);
+                                    }
+                                }}
+                                className={`
+                                p-6 rounded-2xl transition-all duration-300 relative overflow-hidden flex flex-col
+                                ${isPackageLocked ? 'w-full max-w-sm' : ''} 
+                                ${isSelected
+                                    ? "border-2 border-[#D4AF37] bg-white shadow-2xl shadow-[#412986]/10 transform -translate-y-1" 
+                                    : "border border-gray-100 bg-white shadow-sm hover:shadow-md hover:border-[#412986]/30"
                                 }
-                            }}
-                            className={`
-                            p-6 rounded-2xl transition-all duration-300 relative overflow-hidden flex flex-col
-                            ${isPackageLocked ? 'w-full max-w-sm' : ''} 
-                            ${isSelected
-                                ? "border-2 border-[#D4AF37] bg-white shadow-2xl shadow-[#412986]/10 transform -translate-y-1" 
-                                : "border border-gray-100 bg-white shadow-sm hover:shadow-md hover:border-[#412986]/30"
-                            }
-                            ${!isPackageLocked ? 'cursor-pointer' : ''}
-                            `}
-                        >
-                            {/* Header Warna Ungu */}
-                            <div className={`absolute top-0 left-0 right-0 h-2 ${isSelected ? 'bg-[#D4AF37]' : 'bg-[#412986]'}`}></div>
+                                ${!isPackageLocked ? 'cursor-pointer' : ''}
+                                `}
+                            >
+                                <div className={`absolute top-0 left-0 right-0 h-2 ${isSelected ? 'bg-[#D4AF37]' : 'bg-[#412986]'}`}></div>
 
-                            {isSelected && (
-                                <div className="absolute top-4 right-4 text-[#D4AF37]">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                </div>
-                            )}
+                                {isSelected && (
+                                    <div className="absolute top-4 right-4 text-[#D4AF37]">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                )}
 
-                            <div className="mt-4">
-                                <h3 className="font-bold text-xl text-gray-900 mb-1">{service.name}</h3>
-                                <div className="w-12 h-1 bg-gray-100 rounded-full mb-4"></div>
-                                
-                                <p className="text-sm text-gray-500 mb-6 leading-relaxed line-clamp-3">{service.description}</p>
-                                
-                                <div className="mt-auto pt-4 border-t border-dashed border-gray-200">
-                                    <div className="flex justify-between items-end">
-                                        <div>
-                                            <p className="text-xs text-gray-400 line-through italic">RM{originalPrice}</p>
-                                            <p className="text-2xl font-extrabold text-[#412986]">RM{service.price}</p>
-                                        </div>
-                                        <div className="bg-[#412986]/5 text-[#412986] text-xs font-bold px-3 py-1 rounded-full border border-[#412986]/10">
-                                            ⏱️ {service.duration_minutes} Minit
+                                <div className="mt-4">
+                                    <h3 className="font-bold text-xl text-gray-900 mb-1">{service.name}</h3>
+                                    <div className="w-12 h-1 bg-gray-100 rounded-full mb-4"></div>
+                                    <p className="text-sm text-gray-500 mb-6 leading-relaxed line-clamp-3">{service.description}</p>
+                                    <div className="mt-auto pt-4 border-t border-dashed border-gray-200">
+                                        <div className="flex justify-between items-end">
+                                            <div>
+                                                <p className="text-xs text-gray-400 line-through italic">RM{originalPrice}</p>
+                                                <p className="text-2xl font-extrabold text-[#412986]">RM{service.price}</p>
+                                            </div>
+                                            <div className="bg-[#412986]/5 text-[#412986] text-xs font-bold px-3 py-1 rounded-full border border-[#412986]/10">
+                                                ⏱️ {service.duration_minutes} Minit
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {isPackageLocked && (
-                <div className="mt-6 text-center">
-                    <a href="/" className="inline-block text-xs font-bold text-[#412986] hover:text-[#D4AF37] border-b border-transparent hover:border-[#D4AF37] transition">
-                        ← Pilih Pakej Lain
-                    </a>
+                        );
+                    })}
                 </div>
-            )}
+
+                {isPackageLocked && (
+                    <div className="mt-6 text-center">
+                        <a href="/" className="inline-block text-xs font-bold text-[#412986] hover:text-[#D4AF37] border-b border-transparent hover:border-[#D4AF37] transition">
+                            ← Pilih Pakej Lain
+                        </a>
+                    </div>
+                )}
             </div>
 
             {/* STEP 3: PILIH SLOT MASA */}
@@ -382,7 +388,9 @@ function BookingContent() {
                                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
                                                 {session.slots.map((slot, idx) => {
                                                     const isSelected = slot.time === selectedSlot;
-                                                    const isDisabled = !slot.available;
+                                                    // Kita ubah logic disabled: Disabled jika 'paid' atau 'pending'
+                                                    const isDisabled = slot.status !== 'available';
+                                                    const isPending = slot.status === 'pending';
 
                                                     return (
                                                         <button
@@ -390,19 +398,28 @@ function BookingContent() {
                                                             disabled={isDisabled}
                                                             onClick={() => setSelectedSlot(slot.time)}
                                                             className={`
-                                                                py-3 px-2 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center
-                                                                ${isDisabled 
-                                                                    ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed decoration-slice" 
-                                                                    : isSelected
-                                                                        ? "border-[#412986] bg-[#412986] text-white shadow-lg shadow-purple-900/30 scale-105 ring-2 ring-[#D4AF37] ring-offset-2"
-                                                                        : "border-[#412986]/20 bg-white text-[#412986] hover:bg-purple-50 hover:border-[#412986]"
+                                                                py-3 px-2 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center relative
+                                                                ${isPending
+                                                                    // STYLE UNTUK PENDING (JINGGA)
+                                                                    ? "border-orange-200 bg-orange-50 text-orange-400 cursor-not-allowed opacity-80"
+                                                                    : isDisabled 
+                                                                        // STYLE UNTUK PAID (KELABU)
+                                                                        ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed decoration-slice" 
+                                                                        : isSelected
+                                                                            // STYLE UNTUK SELECTED (UNGU)
+                                                                            ? "border-[#412986] bg-[#412986] text-white shadow-lg shadow-purple-900/30 scale-105 ring-2 ring-[#D4AF37] ring-offset-2"
+                                                                            : "border-[#412986]/20 bg-white text-[#412986] hover:bg-purple-50 hover:border-[#412986]"
                                                                 }
                                                             `}
                                                         >
                                                             <span className={`text-sm font-bold ${isDisabled ? "" : "font-mono"}`}>
                                                                 {new Date(`2000-01-01 ${slot.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                                                             </span>
+                                                            
+                                                            {/* Label Kecil untuk Status */}
                                                             {isSelected && <span className="text-[10px] text-[#D4AF37] mt-1">Dipilih</span>}
+                                                            {isPending && <span className="text-[9px] text-orange-500 font-bold mt-1 uppercase">Sedang dipilih</span>}
+                                                            {!isPending && isDisabled && <span className="text-[9px] mt-1"></span>}
                                                         </button>
                                                     );
                                                 })}
@@ -421,19 +438,17 @@ function BookingContent() {
             {selectedSlot && selectedDate && (
                 <div className="pt-6 animate-fade-in-up pb-12">
                 
-                {/* Tajuk Section */}
                 <div className="flex items-center gap-4 mb-6">
                     <div className="w-10 h-10 rounded-full bg-[#412986] text-[#D4AF37] flex items-center justify-center font-bold text-lg shadow-lg shadow-purple-900/20">3</div>
                     <h2 className="text-2xl font-bold text-gray-800">Butiran Anda</h2>
                 </div>
 
-                {/* Container Utama (Putih) */}
                 <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100">
                     
-                    {/* 1. SECTION FORM INPUT (Latar Belakang Kelabu Cair) */}
+                    {/* 1. SECTION FORM INPUT */}
                     <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-5">
                         
-                        {/* A. KOD PROMO (Paling Atas) */}
+                        {/* A. KOD PROMO */}
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Kod Promo / Staff</label>
                             <div className="flex gap-3">
@@ -460,7 +475,7 @@ function BookingContent() {
                             )}
                         </div>
 
-                        {/* B. NAMA & WHATSAPP (Sebaris Desktop, Stack Mobile) */}
+                        {/* B. NAMA & WHATSAPP */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-2">Nama Penuh</label>
@@ -482,7 +497,7 @@ function BookingContent() {
                             </div>
                         </div>
 
-                        {/* C. EMAIL (Full Width) */}
+                        {/* C. EMAIL */}
                         <div>
                             <label className="block text-xs font-bold text-gray-500 mb-2">Alamat Email</label>
                             <input 
@@ -494,7 +509,7 @@ function BookingContent() {
                         </div>
                     </div>
 
-                    {/* 2. SECTION SUMMARY (Kotak Ungu Cair) */}
+                    {/* 2. SECTION SUMMARY */}
                     <div className="mt-6 bg-[#faf5ff] p-6 rounded-xl border border-purple-100">
                         <div className="flex justify-between items-start mb-2">
                             <span className="text-gray-600 font-medium text-sm">Pakej:</span>
@@ -511,17 +526,15 @@ function BookingContent() {
                             </span>
                         </div>
                         
-                        {/* Garis Pemisah */}
                         <div className="border-t border-purple-200 my-4"></div>
 
-                        {/* Total */}
                         <div className="flex justify-between items-center">
                             <span className="font-bold text-purple-900 text-lg">Total:</span>
                             <span className="font-extrabold text-2xl text-[#412986]">RM{selectedService.price}</span>
                         </div>
                     </div>
 
-                    {/* 3. BUTTON PAYMENT (Paling Bawah) */}
+                    {/* 3. BUTTON PAYMENT */}
                     <button 
                         onClick={handlePayment}
                         disabled={loading || !formData.name || !formData.phone}
@@ -546,16 +559,12 @@ function BookingContent() {
         </div>
       </div>
 
-      {/* --- FOOTER (INTEGRATED) --- */}
+      {/* FOOTER */}
       <footer className="bg-gray-900 z-40 text-white py-10 text-center border-t border-gray-800 w-full">
         <div className="container mx-auto px-4">
-          
-          {/* TAJUK */}
           <h3 className="font-black text-xl md:text-2xl mb-4 tracking-widest text-white">
             STUDIO ABG 2026
           </h3>
-
-          {/* ALAMAT (BOLEH KLIK) */}
           <div className="flex justify-center mb-6">
               <a 
                   href="https://www.google.com/maps/search/?api=1&query=60-2,+Jalan+Timur+6/2D,+Bandar+Baru+Enstek,+71760+Nilai,+Negeri+Sembilan"
@@ -563,24 +572,18 @@ function BookingContent() {
                   rel="noopener noreferrer"
                   className="group flex flex-col md:flex-row items-center gap-2 text-gray-400 hover:text-[#a78bfa] transition-colors duration-300"
               >
-                  {/* Icon Location */}
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  
-                  {/* Teks Alamat */}
                   <p className="text-sm md:text-base leading-relaxed max-w-xs md:max-w-none">
                       60-2, Jalan Timur 6/2D, Bandar Baru Enstek,<br className="md:hidden" /> 71760 Nilai, Negeri Sembilan
                   </p>
               </a>
           </div>
-
-          {/* COPYRIGHT */}
           <p className="text-gray-600 text-xs tracking-wider">
             Hak Cipta Terpelihara © 2026 Al Bayan Global.
           </p>
-
         </div>
       </footer>
 
