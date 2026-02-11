@@ -22,9 +22,7 @@ function BookingContent() {
   const [promoStatus, setPromoStatus] = useState(null); // null, 'checking', 'valid', 'invalid'
   const [promoMessage, setPromoMessage] = useState("");
 
-  // UBAH: takenSlots sekarang simpan object lengkap {start, end, status}, bukan range masa sahaja
   const [takenSlots, setTakenSlots] = useState([]);
-  
   const [isPackageLocked, setIsPackageLocked] = useState(false);
   const searchParams = useSearchParams();
 
@@ -34,7 +32,7 @@ function BookingContent() {
     return h * 60 + m;
   };
 
-  // --- 1. AUTO SET TARIKH HARINI (Waktu Malaysia) ---
+  // --- 1. AUTO SET TARIKH HARINI ---
   useEffect(() => {
     const today = new Date().toLocaleDateString('en-CA', {
         timeZone: 'Asia/Kuala_Lumpur'
@@ -49,7 +47,6 @@ function BookingContent() {
       if (data) {
         setServices(data);
 
-        // A. LOGIC LOCK PAKEJ
         const packageIdFromUrl = searchParams.get('package');
         if (packageIdFromUrl) {
             const foundService = data.find(s => s.id == packageIdFromUrl);
@@ -62,9 +59,7 @@ function BookingContent() {
     }
     fetchServices();
 
-    // B. LOGIC AFFILIATE / REFERRAL
     const refCode = searchParams.get('ref') || searchParams.get('referral');
-    
     if (refCode) {
         setFormData(prev => ({ ...prev, referral: refCode.toUpperCase() }));
         if (typeof window !== 'undefined') {
@@ -78,45 +73,70 @@ function BookingContent() {
             }
         }
     }
-
   }, [searchParams]);
 
-  // --- 3. FETCH TAKEN SLOTS (LOGIC BARU - AMBIL STATUS JUGA) ---
+  // --- 3. FETCH TAKEN SLOTS (LOGIC FILTER 15 MINIT) ---
   useEffect(() => {
     if (selectedService && selectedDate) {
+      
       async function fetchSlots() {
-        // Kita ambil status booking juga ('paid' atau 'pending')
+        // Kita perlukan created_at untuk kira umur slot 'pending'
         const { data } = await supabase
           .from('bookings')
-          .select('start_time, status, services(duration_minutes)') 
+          .select('start_time, status, created_at, services(duration_minutes)') 
           .eq('booking_date', selectedDate)
-          .in('status', ['paid', 'pending']); // Ambil dedua status
+          .in('status', ['paid', 'pending']);
 
         if (data) {
-          const blockedRanges = data.map(b => {
-             const start = timeToMinutes(b.start_time.slice(0, 5));
-             const duration = b.services?.duration_minutes || 30; 
-             
-             return { 
-                 start: start, 
-                 end: start + duration + 5, // +5 minit buffer
-                 status: b.status // Simpan status ('paid' atau 'pending')
-             }; 
-          });
+          const now = new Date().getTime();
+
+          const blockedRanges = data
+            .filter(b => {
+               // 1. Kalau slot dah dibayar (PAID), wajib block
+               if (b.status === 'paid') return true;
+               
+               // 2. Kalau slot PENDING, kita check umur dia
+               if (b.status === 'pending') {
+                   const createdTime = new Date(b.created_at).getTime();
+                   const diffMinutes = (now - createdTime) / 1000 / 60;
+                   
+                   // HANYA block jika usianya KURANG dari 15 minit
+                   // Kalau lebih 15 minit, filter akan return false (Buat-buat tak nampak)
+                   return diffMinutes < 15;
+               }
+               return false;
+            })
+            .map(b => {
+               const start = timeToMinutes(b.start_time.slice(0, 5));
+               const duration = b.services?.duration_minutes || 30; 
+               return { 
+                   start: start, 
+                   end: start + duration + 5,
+                   status: b.status 
+               }; 
+            });
+            
           setTakenSlots(blockedRanges);
         }
       }
+
+      // Fetch serta-merta bila user pilih tarikh/pakej
       fetchSlots();
+
+      // AUTO-REFRESH: Semak database setiap 1 minit (60000ms)
+      // Ini fungsi supaya slot Jingga jadi Putih secara "Live"
+      const intervalId = setInterval(fetchSlots, 60000);
+      return () => clearInterval(intervalId);
     }
   }, [selectedDate, selectedService]);
 
-  // --- GENERATE TIME SLOTS (LOGIC BARU - CHECK STATUS) ---
+  // --- GENERATE TIME SLOTS ---
   const generateTimeSlots = () => {
     if (!selectedService) return [];
     
     const slots = [];
     const myDuration = selectedService.duration_minutes || 30;
-    const gap = 5; // Buffer 5 minit
+    const gap = 5; 
     
     let currentMin = 10 * 60; 
     const endMin = 23 * 60; 
@@ -129,20 +149,18 @@ function BookingContent() {
         const myStart = currentMin;
         const myEnd = currentMin + myDuration + gap; 
 
-        // Cari jika slot ini bertindih dengan mana-mana booking
         const overlappingBooking = takenSlots.find(booked => {
             return myStart < booked.end && myEnd > booked.start;
         });
 
-        // Tentukan status slot
-        let slotStatus = 'available'; // Default
+        let slotStatus = 'available'; 
         if (overlappingBooking) {
-            slotStatus = overlappingBooking.status; // 'paid' atau 'pending'
+            slotStatus = overlappingBooking.status; 
         }
 
         slots.push({ 
             time: timeLabel, 
-            status: slotStatus // Simpan status spesifik
+            status: slotStatus 
         });
 
         currentMin += (myDuration + gap); 
@@ -209,8 +227,11 @@ function BookingContent() {
         const json = await res.json();
 
         if (json.error) {
-            alert("Ralat Pembayaran: " + json.error);
+            alert("Mesej: " + json.error);
             setLoading(false);
+            
+            // Kalau error sebab slot penuh/dipegang orang, kita auto-refresh slot
+            setTakenSlots([...takenSlots]); // Trigger re-render
             return;
         }
 
@@ -231,10 +252,8 @@ function BookingContent() {
   const visibleServices = isPackageLocked && selectedService ? [selectedService] : services;
 
   return (
-    // BACKGROUND CREAM (#FDFBF7) - TEMA RAYA CLASSIC
     <div className="min-h-screen bg-indigo-100 font-sans text-gray-900 selection:bg-[#412986] selection:text-white flex flex-col justify-between">
         
-      {/* WRAPPER CONTENT */}
       <div className="py-6 px-4 sm:px-6 lg:px-8 flex-grow">
         <div className="max-w-4xl mx-auto space-y-6">
             
@@ -388,7 +407,6 @@ function BookingContent() {
                                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
                                                 {session.slots.map((slot, idx) => {
                                                     const isSelected = slot.time === selectedSlot;
-                                                    // Kita ubah logic disabled: Disabled jika 'paid' atau 'pending'
                                                     const isDisabled = slot.status !== 'available';
                                                     const isPending = slot.status === 'pending';
 
@@ -400,13 +418,10 @@ function BookingContent() {
                                                             className={`
                                                                 py-3 px-2 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center relative
                                                                 ${isPending
-                                                                    // STYLE UNTUK PENDING (JINGGA)
                                                                     ? "border-orange-200 bg-orange-50 text-orange-400 cursor-not-allowed opacity-80"
                                                                     : isDisabled 
-                                                                        // STYLE UNTUK PAID (KELABU)
                                                                         ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed decoration-slice" 
                                                                         : isSelected
-                                                                            // STYLE UNTUK SELECTED (UNGU)
                                                                             ? "border-[#412986] bg-[#412986] text-white shadow-lg shadow-purple-900/30 scale-105 ring-2 ring-[#D4AF37] ring-offset-2"
                                                                             : "border-[#412986]/20 bg-white text-[#412986] hover:bg-purple-50 hover:border-[#412986]"
                                                                 }
@@ -416,10 +431,9 @@ function BookingContent() {
                                                                 {new Date(`2000-01-01 ${slot.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                                                             </span>
                                                             
-                                                            {/* Label Kecil untuk Status */}
                                                             {isSelected && <span className="text-[10px] text-[#D4AF37] mt-1">Dipilih</span>}
-                                                            {isPending && <span className="text-[9px] text-orange-500 font-bold mt-1 uppercase">Sedang dipilih</span>}
-                                                            {!isPending && isDisabled && <span className="text-[9px] mt-1"></span>}
+                                                            {isPending && <span className="text-[9px] text-orange-500 font-bold mt-1 uppercase">Sedang Bayar</span>}
+                                                            {!isPending && isDisabled && <span className="text-[9px] mt-1">Full</span>}
                                                         </button>
                                                     );
                                                 })}
@@ -448,7 +462,6 @@ function BookingContent() {
                     {/* 1. SECTION FORM INPUT */}
                     <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-5">
                         
-                        {/* A. KOD PROMO */}
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Kod Promo / Staff</label>
                             <div className="flex gap-3">
@@ -475,7 +488,6 @@ function BookingContent() {
                             )}
                         </div>
 
-                        {/* B. NAMA & WHATSAPP */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-2">Nama Penuh</label>
@@ -497,7 +509,6 @@ function BookingContent() {
                             </div>
                         </div>
 
-                        {/* C. EMAIL */}
                         <div>
                             <label className="block text-xs font-bold text-gray-500 mb-2">Alamat Email</label>
                             <input 
@@ -559,7 +570,6 @@ function BookingContent() {
         </div>
       </div>
 
-      {/* FOOTER */}
       <footer className="bg-gray-900 z-40 text-white py-10 text-center border-t border-gray-800 w-full">
         <div className="container mx-auto px-4">
           <h3 className="font-black text-xl md:text-2xl mb-4 tracking-widest text-white">
