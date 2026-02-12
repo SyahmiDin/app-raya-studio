@@ -491,7 +491,7 @@ function BookingContent() {
                     <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-5">
                         
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Kod Promo / Staff</label>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Kod Referral</label>
                             <div className="flex gap-3">
                                 <input 
                                     type="text" 
