@@ -76,14 +76,11 @@ export default function AdminBookingsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div>
             <h1 className="text-3xl font-bold text-[#412986]">Senarai Tempahan</h1>
-            <p className="text-gray-500 text-sm mt-1">Urus jadual dan tempahan pelanggan anda di sini.</p>
+            <p className="text-gray-500 text-sm mt-1">Urus jadual dan tempahan pelanggan.</p>
           </div>
           <div className="flex flex-wrap gap-3 w-full md:w-auto">
-             <a href="/admin/promo" className="flex-1 md:flex-none text-center bg-green-600 text-white px-5 py-2.5 rounded-xl hover:bg-green-700 font-bold text-sm shadow-sm transition">
-               💰 Urus Komisen
-             </a>
              <a href="/admin" className="flex-1 md:flex-none text-center bg-gray-900 text-white px-5 py-2.5 rounded-xl hover:bg-gray-800 font-medium transition text-sm shadow-sm">
-               ← Upload Gallery
+               ← Utama
              </a>
           </div>
         </div>
@@ -102,13 +99,13 @@ export default function AdminBookingsPage() {
             <div className="flex gap-3 w-full md:w-auto">
                 <button 
                   onClick={setToday} 
-                  className="flex-1 md:flex-none bg-[#412986]/10 text-[#412986] px-5 py-2 rounded-xl font-bold hover:bg-[#412986]/20 transition text-sm"
+                  className="flex-1 md:flex-none bg-[#412986]/10 text-[#412986] px-5 py-2 rounded-xl font-bold hover:bg-[#412986]/20 hover:cursor-pointer transition text-sm"
                 >
                   Hari Ini
                 </button>
                 <button 
                   onClick={() => setFilterDate("")} 
-                  className={`flex-1 md:flex-none px-5 py-2 rounded-xl font-bold transition text-sm border ${filterDate === "" ? 'bg-[#412986] text-white border-[#412986] shadow-md' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                  className={`flex-1 md:flex-none px-5 py-2 rounded-xl font-bold transition text-sm border ${filterDate === "" ? 'bg-[#412986] text-white border-[#412986] shadow-md' : 'bg-white text-gray-600 border-gray-300 hover:cursor-pointer hover:bg-gray-50'}`}
                 >
                   Tunjuk Semua
                 </button>
