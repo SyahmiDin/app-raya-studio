@@ -102,7 +102,7 @@ function BookingContent() {
     }
   }, [searchParams]);
 
-  // --- 3. FETCH TAKEN SLOTS (LOGIC FILTER 15 MINIT) ---
+  // --- 3. FETCH TAKEN SLOTS (LOGIC FILTER 5 MINIT) ---
   useEffect(() => {
     if (selectedService && selectedDate) {
       
@@ -122,7 +122,7 @@ function BookingContent() {
                if (b.status === 'pending') {
                    const createdTime = new Date(b.created_at).getTime();
                    const diffMinutes = (now - createdTime) / 1000 / 60;
-                   return diffMinutes < 15;
+                   return diffMinutes < 5;
                }
                return false;
             })
@@ -460,7 +460,7 @@ function BookingContent() {
                                                             </span>
                                                             
                                                             {isSelected && <span className="text-[10px] text-[#D4AF37] mt-1">Dipilih</span>}
-                                                            {isPending && <span className="text-[9px] text-orange-500 font-bold mt-1 uppercase">Sedang Bayar</span>}
+                                                            {isPending && <span className="text-[9px] text-orange-500 font-bold mt-1 uppercase">Pending</span>}
                                                             {!isPending && isDisabled && <span className="text-[9px] mt-1"></span>}
                                                         </button>
                                                     );
