@@ -300,7 +300,7 @@ export default function AdminPage() {
         <div>
             <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-2">
                 <h2 className="text-xl md:text-2xl font-serif font-bold text-gray-800 flex items-center gap-2">
-                    <span style={{color: GOLD_COLOR}}>✦</span> Senarai Gallery ({albums.length})
+                    <span style={{color: GOLD_COLOR}}>✦</span> Senarai Album ({albums.length})
                 </h2>
                 <button onClick={fetchAlbums} className="text-sm font-semibold hover:underline flex items-center gap-1 bg-gray-50 px-3 py-1 rounded-full hover:cursor-pointer" style={{ color: THEME_COLOR }}>
                     Refresh List ↻
@@ -321,7 +321,7 @@ export default function AdminPage() {
                     <table className="w-full text-left border-collapse min-w-[600px] md:min-w-full">
                         <thead>
                             <tr className="text-white text-xs md:text-sm uppercase tracking-wider" style={{ backgroundColor: THEME_COLOR }}>
-                                <th className="p-4 md:p-5 font-medium">Nama Keluarga</th>
+                                <th className="p-4 md:p-5 font-medium">Nama Album</th>
                                 <th className="p-4 md:p-5 font-medium text-center">PIN</th>
                                 <th className="p-4 md:p-5 font-medium text-center">Jumlah</th>
                                 <th className="p-4 md:p-5 font-medium text-center">Tindakan</th>

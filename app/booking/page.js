@@ -24,6 +24,11 @@ function BookingContent() {
 
   const [takenSlots, setTakenSlots] = useState([]);
   const [isPackageLocked, setIsPackageLocked] = useState(false);
+  
+  // --- STATE BARU: TERMS & CONDITIONS ---
+  const [isAgreed, setIsAgreed] = useState(false); // Checkbox state
+  const [showTermsModal, setShowTermsModal] = useState(false); // Modal visibility
+
   const searchParams = useSearchParams();
 
   // Helper: Tukar masa "10:30" kepada minit (cth: 630)
@@ -59,17 +64,39 @@ function BookingContent() {
     }
     fetchServices();
 
+    // Logic Auto-Check Referral dari URL
+    const checkUrlReferral = async (code) => {
+        setFormData(prev => ({ ...prev, referral: code }));
+        
+        setPromoStatus("checking");
+        const { data, error } = await supabase
+            .from('referral_codes')
+            .select('*')
+            .eq('code', code)
+            .eq('is_active', true)
+            .single();
+
+        if (error || !data) {
+            setPromoStatus("invalid");
+            setPromoMessage("❌ Kod URL Tidak Sah");
+        } else {
+            setPromoStatus("valid");
+            setPromoMessage(`✅ Kod Sah! (Staff: ${data.staff_name || 'Admin'})`);
+        }
+    };
+
     const refCode = searchParams.get('ref') || searchParams.get('referral');
     if (refCode) {
-        setFormData(prev => ({ ...prev, referral: refCode.toUpperCase() }));
+        const cleanCode = refCode.toUpperCase();
+        checkUrlReferral(cleanCode);
         if (typeof window !== 'undefined') {
-            localStorage.setItem('studioRayaReferral', refCode.toUpperCase());
+            localStorage.setItem('studioRayaReferral', cleanCode);
         }
     } else {
         if (typeof window !== 'undefined') {
             const savedRef = localStorage.getItem('studioRayaReferral');
             if (savedRef) {
-                setFormData(prev => ({ ...prev, referral: savedRef }));
+                checkUrlReferral(savedRef);
             }
         }
     }
@@ -80,7 +107,6 @@ function BookingContent() {
     if (selectedService && selectedDate) {
       
       async function fetchSlots() {
-        // Kita perlukan created_at untuk kira umur slot 'pending'
         const { data } = await supabase
           .from('bookings')
           .select('start_time, status, created_at, services(duration_minutes)') 
@@ -92,16 +118,10 @@ function BookingContent() {
 
           const blockedRanges = data
             .filter(b => {
-               // 1. Kalau slot dah dibayar (PAID), wajib block
                if (b.status === 'paid') return true;
-               
-               // 2. Kalau slot PENDING, kita check umur dia
                if (b.status === 'pending') {
                    const createdTime = new Date(b.created_at).getTime();
                    const diffMinutes = (now - createdTime) / 1000 / 60;
-                   
-                   // HANYA block jika usianya KURANG dari 15 minit
-                   // Kalau lebih 15 minit, filter akan return false (Buat-buat tak nampak)
                    return diffMinutes < 15;
                }
                return false;
@@ -120,11 +140,7 @@ function BookingContent() {
         }
       }
 
-      // Fetch serta-merta bila user pilih tarikh/pakej
       fetchSlots();
-
-      // AUTO-REFRESH: Semak database setiap 1 minit (60000ms)
-      // Ini fungsi supaya slot Jingga jadi Putih secara "Live"
       const intervalId = setInterval(fetchSlots, 60000);
       return () => clearInterval(intervalId);
     }
@@ -210,6 +226,17 @@ function BookingContent() {
         return;
     }
 
+    // WAJIB CHECKBOX
+    if (!isAgreed) {
+        alert("Sila setuju dengan Terma & Syarat sebelum meneruskan pembayaran.");
+        return;
+    }
+
+    let finalReferralCode = "";
+    if (promoStatus === 'valid') {
+        finalReferralCode = formData.referral.toUpperCase();
+    }
+
     setLoading(true);
     
     try {
@@ -220,7 +247,10 @@ function BookingContent() {
             service: selectedService,
             date: selectedDate,
             time: selectedSlot,
-            customer: formData,
+            customer: {
+                ...formData,
+                referral: finalReferralCode 
+            },
           }),
         });
 
@@ -229,9 +259,7 @@ function BookingContent() {
         if (json.error) {
             alert("Mesej: " + json.error);
             setLoading(false);
-            
-            // Kalau error sebab slot penuh/dipegang orang, kita auto-refresh slot
-            setTakenSlots([...takenSlots]); // Trigger re-render
+            setTakenSlots([...takenSlots]); 
             return;
         }
 
@@ -433,7 +461,7 @@ function BookingContent() {
                                                             
                                                             {isSelected && <span className="text-[10px] text-[#D4AF37] mt-1">Dipilih</span>}
                                                             {isPending && <span className="text-[9px] text-orange-500 font-bold mt-1 uppercase">Sedang Bayar</span>}
-                                                            {!isPending && isDisabled && <span className="text-[9px] mt-1">Full</span>}
+                                                            {!isPending && isDisabled && <span className="text-[9px] mt-1"></span>}
                                                         </button>
                                                     );
                                                 })}
@@ -469,7 +497,11 @@ function BookingContent() {
                                     type="text" 
                                     placeholder="CTH: STAFF023" 
                                     className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#412986] outline-none text-gray-700 bg-white placeholder-gray-400 font-bold uppercase" 
-                                    onChange={(e) => setFormData({...formData, referral: e.target.value.toUpperCase()})} 
+                                    onChange={(e) => {
+                                        setFormData({...formData, referral: e.target.value.toUpperCase()});
+                                        setPromoStatus(null); // Reset status bila user taip baru
+                                        setPromoMessage("");
+                                    }} 
                                     value={formData.referral} 
                                 />
                                 <button 
@@ -545,12 +577,27 @@ function BookingContent() {
                         </div>
                     </div>
 
-                    {/* 3. BUTTON PAYMENT */}
+                    {/* --- 3. CHECKBOX TERMA & SYARAT (BARU) --- */}
+                    <div className="mt-6 mb-2 p-4 bg-yellow-50 border border-yellow-100 rounded-xl flex items-start gap-3">
+                        <input 
+                            type="checkbox" 
+                            id="tnc"
+                            checked={isAgreed}
+                            onChange={(e) => setIsAgreed(e.target.checked)}
+                            className="mt-1 w-5 h-5 text-[#412986] border-gray-300 rounded focus:ring-[#412986] cursor-pointer"
+                        />
+                        <label htmlFor="tnc" className="text-sm text-gray-600 leading-relaxed select-none cursor-pointer">
+                            Saya bersetuju <button onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} className="font-bold text-[#412986] hover:underline underline-offset-2">Terma & Syarat</button> dari Studio ABG Raya, dengan ini mengesahkan pilihan dan butiran tempahan saya.
+                        </label>
+                    </div>
+
+                    {/* 4. BUTTON PAYMENT */}
                     <button 
                         onClick={handlePayment}
-                        disabled={loading || !formData.name || !formData.phone}
-                        className={`mt-6 w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-2
-                            ${loading 
+                        // Tambah !isAgreed dalam disabled condition
+                        disabled={loading || !formData.name || !formData.phone || !isAgreed}
+                        className={`mt-4 w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-2
+                            ${loading || !isAgreed
                                 ? "bg-gray-400 cursor-not-allowed text-white" 
                                 : "bg-[#412986] text-white hover:bg-[#301F63] hover:-translate-y-1"
                             }
@@ -596,6 +643,128 @@ function BookingContent() {
           </p>
         </div>
       </footer>
+
+      {/* --- MODAL TERMA & SYARAT --- */}
+      {showTermsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-scale-up overflow-hidden">
+                
+                {/* Header Modal */}
+                <div className="bg-[#412986] p-5 flex justify-between items-center text-white shrink-0">
+                    <h3 className="font-bold text-lg uppercase tracking-wider">Terma & Syarat</h3>
+                    <button onClick={() => setShowTermsModal(false)} className="bg-white/10 hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center transition">✕</button>
+                </div>
+
+                {/* Content Modal (Scrollable) */}
+                <div className="p-6 overflow-y-auto text-sm text-gray-700 space-y-6 leading-relaxed">
+                    
+                    {/* Seksyen 1 */}
+                    <div>
+                        <h4 className="font-bold text-[#412986] mb-2 border-b pb-1">1. Polisi Pembayaran</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Tiada Deposit:</strong> Kami tidak mengambil sebarang deposit. Walau bagaimanapun, bayaran penuh (Full Payment) mengikut pakej mestilah dijelaskan semasa tempahan dibuat.</li>
+                            <li><strong>Pengesahan Slot:</strong> Slot anda akan dihantar ke emel yang anda isi semasa membuat tempahan.</li>
+                        </ul>
+                    </div>
+
+                    {/* Seksyen 2 */}
+                    <div>
+                        <h4 className="font-bold text-[#412986] mb-2 border-b pb-1">2. Pembatalan & Pemulangan Wang (Refund)</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Pembatalan oleh Pelanggan:</strong> Jika anda membatalkan tempahan, hanya 50% sahaja daripada bayaran penuh akan dipulangkan semula.</li>
+                            <li><strong>No-Show:</strong> Sekiranya pelanggan tidak hadir pada hari kejadian tanpa sebarang notis, bayaran penuh tidak akan dipulangkan (non-refundable).</li>
+                            <li><strong>Pembatalan oleh Studio:</strong> Jika pihak studio terpaksa membatalkan sesi atas sebab kecemasan, bayaran akan dipulangkan 100% atau dijadualkan semula mengikut persetujuan.</li>
+                        </ul>
+                    </div>
+
+                    {/* Seksyen 3 */}
+                    <div>
+                        <h4 className="font-bold text-[#412986] mb-2 border-b pb-1">3. Penjadualan Semula (Reschedule)</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li>Penjadualan semula dibenarkan sekali sahaja dan mestilah dimaklumkan sekurang-kurangnya 48 jam sebelum waktu sesi.</li>
+                            <li>Permintaan reschedule pada saat akhir (kurang 24 jam) tidak akan dilayan dan bayaran dianggap hangus jika pelanggan tidak hadir.</li>
+                        </ul>
+                    </div>
+
+                    {/* Seksyen 4 */}
+                    <div>
+                        <h4 className="font-bold text-[#412986] mb-2 border-b pb-1">4. Ketepatan Masa</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li>Sesi penggambaran adalah mengikut waktu tepat yang telah ditempah.</li>
+                            <li>Jika pelanggan lewat, masa sesi tidak akan ditambah. Sebagai contoh, jika anda lewat 15 minit, sesi anda hanya berbaki 45 minit (untuk slot 1 jam).</li>
+                        </ul>
+                    </div>
+
+                    {/* Seksyen 5 */}
+                    <div>
+                        <h4 className="font-bold text-[#412986] mb-2 border-b pb-1">5. Kapasiti & Etika</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li>Sila patuhi had maksimum [Jumlah] orang bagi setiap sesi.</li>
+                            <li>Pelanggan bertanggungjawab sepenuhnya ke atas keselamatan diri dan barang peribadi sepanjang berada di studio.</li>
+                        </ul>
+                    </div>
+
+                    <hr className="my-4 border-gray-200" />
+
+                    <h3 className="font-black text-center text-gray-900 uppercase">Polisi Privasi Pelanggan (Privacy Policy)</h3>
+
+                    {/* Privasi 1 */}
+                    <div>
+                        <h4 className="font-bold text-[#412986] mb-2">1. Maklumat Yang Dikumpul</h4>
+                        <p>Kami hanya mengumpul maklumat yang diperlukan untuk urusan tempahan dan sesi fotografi, termasuk:</p>
+                        <ul className="list-disc pl-5 mt-1">
+                            <li>Nama penuh dan nombor telefon.</li>
+                            <li>Alamat emel (untuk penghantaran gambar).</li>
+                        </ul>
+                    </div>
+
+                    {/* Privasi 2 */}
+                    <div>
+                        <h4 className="font-bold text-[#412986] mb-2">2. Penggunaan Gambar (Copyright & Social Media)</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Hak Milik:</strong> Semua gambar yang diambil adalah milik pelanggan bagi kegunaan peribadi. Walau bagaimanapun, hak cipta (copyright) karya seni tersebut kekal di bawah Al Bayan Studio</li>
+                            <li><strong>Tujuan Promosi:</strong> Pihak studio tidak akan memuat naik atau menggunakan gambar anda di media sosial (Instagram/TikTok/Facebook) untuk tujuan promosi tanpa kebenaran anda terlebih dahulu.</li>
+                            <li><strong>Keizinan:</strong> Jika anda tidak membenarkan gambar keluarga anda dipaparkan secara awam, sila maklumkan kepada kami semasa hari sesi.</li>
+                        </ul>
+                    </div>
+
+                    {/* Privasi 3 */}
+                    <div>
+                        <h4 className="font-bold text-[#412986] mb-2">3. Keselamatan Fail & Gambar</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li>Semua gambar anda disimpan dalam storan digital yang selamat (Cloud/Hard Drive) dan hanya boleh diakses oleh pihak studio.</li>
+                            <li>Link muat turun yang diberikan kepada anda adalah tertutup. Kami menasihatkan anda untuk tidak berkongsi link tersebut kepada pihak ketiga yang tidak dikenali.</li>
+                            <li>Fail anda akan dipadam secara kekal daripada storan kami selepas tempoh 6 bulan dari tarikh penyerahan gambar.</li>
+                        </ul>
+                    </div>
+
+                    {/* Privasi 4 */}
+                    <div>
+                        <h4 className="font-bold text-[#412986] mb-2">4. Perkongsian Maklumat</h4>
+                        <p>Kami tidak akan menjual atau berkongsi maklumat peribadi anda (nombor telefon/emel) kepada mana-mana pihak ketiga atau syarikat pemasaran.</p>
+                    </div>
+
+                    <div className="bg-gray-100 p-4 rounded-lg text-xs text-gray-500 italic text-center">
+                        Nota Penafian: Dengan melanggan servis kami, anda bersetuju dengan pengurusan data dan gambar mengikut terma di atas demi menjaga privasi kedua-dua belah pihak.
+                    </div>
+
+                </div>
+
+                {/* Footer Modal */}
+                <div className="p-4 bg-gray-50 border-t flex justify-end shrink-0">
+                    <button 
+                        onClick={() => {
+                            setShowTermsModal(false);
+                            setIsAgreed(true); // Auto tick bila tekan 'Faham & Tutup' (Optional UX improvement)
+                        }} 
+                        className="bg-[#412986] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#301F63] transition w-full md:w-auto"
+                    >
+                        Faham & Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
 
     </div>
   );
