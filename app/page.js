@@ -40,7 +40,10 @@ export default function Home() {
   useEffect(() => {
     async function fetchServices() {
       const { data } = await supabase.from('services').select('*').order('price');
-      if (data) setServices(data);
+      if (data) {
+        const publicServices = data.filter(s => !s.name.toUpperCase().includes("BLOCK"));
+        setServices(publicServices);
+      }
     }
     fetchServices();
   }, []);
@@ -73,8 +76,8 @@ export default function Home() {
 
       {/* BACKGROUND - Tukar absolute ke fixed supaya bg kekal penuh bila scroll di mobile */}
       <div className="fixed inset-0 z-0">
-        <img src="/bg.jpeg" alt="Background Studio" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/70"></div>
+        <img src="/bg2.jpg" alt="Background Studio" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/80"></div>
       </div>
 
       {/* NAVBAR */}
@@ -86,6 +89,7 @@ export default function Home() {
 
       {/* MAIN CONTENT - Ubah padding supaya mesra mobile (px-4) */}
       <main className="relative z-10 flex-grow flex flex-col items-center justify-center text-center px-4 md:px-12 py-8 md:py-12">
+        {/* --- TAJUK & SUBTAJUK DENGAN MOTION --- */}
         {/* --- TAJUK & SUBTAJUK DENGAN MOTION --- */}
         <motion.h1 
           className="relative z-10 text-3xl sm:text-5xl md:text-7xl font-black text-white mb-6 drop-shadow-lg flex items-start justify-center gap-2 md:gap-6 overflow-hidden py-4"
@@ -100,12 +104,19 @@ export default function Home() {
             className="w-10 h-10 sm:w-20 sm:h-20 md:w-32 md:h-32 mt-[-5px] md:mt-[-20px] animate-pendulum object-contain" 
           />
 
-          {/* Teks Huruf per Huruf */}
-          <span className="flex flex-wrap justify-center">
+          {/* Teks Huruf per Huruf - DIKEMASKINI */}
+          <span className="flex flex-wrap justify-center items-center">
             {letters.map((char, index) => (
-              <motion.span key={index} variants={letterVariants} className="inline-block">
-                {char === " " ? "\u00A0" : char}
-              </motion.span>
+              char === " " ? (
+                // LOGIC UBAHAN:
+                // w-full pada mobile: Memaksa perkataan seterusnya ke baris baru
+                // md:w-[1rem]: Pada desktop, ia kembali menjadi jarak biasa
+                <span key={index} className="w-full h-0 md:w-[1rem] md:h-auto block md:inline-block"></span>
+              ) : (
+                <motion.span key={index} variants={letterVariants} className="inline-block">
+                  {char}
+                </motion.span>
+              )
             ))}
           </span>
 

@@ -323,7 +323,7 @@ function BookingContent() {
             <div className="relative">
                 <div className="flex items-center gap-4 mb-6">
                     <div className="w-10 h-10 rounded-full bg-[#412986] text-[#D4AF37] flex items-center justify-center font-bold text-lg shadow-lg shadow-purple-900/20">1</div>
-                    <h2 className="text-2xl font-bold text-gray-800">Pilihan Pakej Anda</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">Pakej Pilihan Anda</h2>
                 </div>
                 
                 <div className={`gap-6 ${isPackageLocked ? 'flex justify-center' : 'grid grid-cols-1 md:grid-cols-3'}`}>
@@ -691,7 +691,7 @@ function BookingContent() {
                         <h4 className="font-bold text-[#412986] mb-2 border-b pb-1">4. Ketepatan Masa</h4>
                         <ul className="list-disc pl-5 space-y-1">
                             <li>Sesi penggambaran adalah mengikut waktu tepat yang telah ditempah.</li>
-                            <li>Jika pelanggan lewat, masa sesi tidak akan ditambah. Sebagai contoh, jika anda lewat 15 minit, sesi anda hanya berbaki 45 minit (untuk slot 1 jam).</li>
+                            <li>Jika pelanggan lewat, masa sesi tidak akan ditambah. Sebagai contoh, jika anda lewat 5 minit, sesi anda hanya berbaki 20 minit (untuk slot 25 minit).</li>
                         </ul>
                     </div>
 
