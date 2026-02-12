@@ -69,125 +69,178 @@ export default function AdminBookingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         
         {/* HEADER */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Senarai Tempahan</h1>
+            <h1 className="text-3xl font-bold text-[#412986]">Senarai Tempahan</h1>
+            <p className="text-gray-500 text-sm mt-1">Urus jadual dan tempahan pelanggan anda di sini.</p>
           </div>
-          <div className="flex gap-2">
-             <a href="/admin/promo" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-bold text-sm shadow transition">
+          <div className="flex flex-wrap gap-3 w-full md:w-auto">
+             <a href="/admin/promo" className="flex-1 md:flex-none text-center bg-green-600 text-white px-5 py-2.5 rounded-xl hover:bg-green-700 font-bold text-sm shadow-sm transition">
                💰 Urus Komisen
              </a>
-             <a href="/admin" className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition text-sm">
+             <a href="/admin" className="flex-1 md:flex-none text-center bg-gray-900 text-white px-5 py-2.5 rounded-xl hover:bg-gray-800 font-medium transition text-sm shadow-sm">
                ← Upload Gallery
              </a>
           </div>
         </div>
 
         {/* FILTER BAR */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-8 flex flex-col md:flex-row items-center gap-4 justify-between">
-            <div className="flex items-center gap-2 w-full md:w-auto">
-                <span className="font-bold text-gray-700">📅 Pilih Tarikh:</span>
-                <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"/>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row items-center gap-4 justify-between">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-3 w-full md:w-auto">
+                <span className="font-bold text-gray-700 text-sm">📅 Pilih Tarikh:</span>
+                <input 
+                  type="date" 
+                  value={filterDate} 
+                  onChange={(e) => setFilterDate(e.target.value)} 
+                  className="w-full md:w-auto border border-gray-300 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-[#412986] focus:border-[#412986] transition"
+                />
             </div>
-            <div className="flex gap-2 w-full md:w-auto">
-                <button onClick={setToday} className="flex-1 md:flex-none bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-bold hover:bg-blue-200 transition text-sm">Hari Ini</button>
-                <button onClick={() => setFilterDate("")} className={`flex-1 md:flex-none px-4 py-2 rounded-lg font-bold transition text-sm border ${filterDate === "" ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>Tunjuk Semua</button>
+            <div className="flex gap-3 w-full md:w-auto">
+                <button 
+                  onClick={setToday} 
+                  className="flex-1 md:flex-none bg-[#412986]/10 text-[#412986] px-5 py-2 rounded-xl font-bold hover:bg-[#412986]/20 transition text-sm"
+                >
+                  Hari Ini
+                </button>
+                <button 
+                  onClick={() => setFilterDate("")} 
+                  className={`flex-1 md:flex-none px-5 py-2 rounded-xl font-bold transition text-sm border ${filterDate === "" ? 'bg-[#412986] text-white border-[#412986] shadow-md' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                >
+                  Tunjuk Semua
+                </button>
             </div>
         </div>
 
         {/* TABLE CONTENT */}
         {loading ? (
-          <div className="text-center py-20 text-gray-600 animate-pulse font-medium">Sedang cari data... ⏳</div>
+          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div className="w-10 h-10 border-4 border-[#412986]/20 border-t-[#412986] rounded-full animate-spin mb-4"></div>
+            <div className="text-[#412986] font-medium animate-pulse">Sedang mencari data...</div>
+          </div>
         ) : bookings.length === 0 ? (
-          <div className="bg-white p-12 rounded-xl shadow text-center border border-dashed border-gray-300">
-            <div className="text-4xl mb-2">📭</div>
-            <h3 className="text-lg font-bold text-gray-800">Tiada tempahan ditemui</h3>
+          <div className="bg-white p-16 rounded-2xl shadow-sm text-center border border-dashed border-gray-300">
+            <div className="text-5xl mb-4">📭</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Tiada tempahan ditemui</h3>
             <p className="text-gray-500 text-sm">{filterDate ? `Tiada orang booking pada tarikh ${formatDate(filterDate)}.` : "Belum ada sebarang booking lagi."}</p>
-            {filterDate && <button onClick={() => setFilterDate("")} className="mt-4 text-blue-600 hover:underline text-sm font-bold">Lihat semua tarikh</button>}
+            {filterDate && (
+              <button onClick={() => setFilterDate("")} className="mt-6 text-[#412986] hover:text-[#2d1c5e] font-bold underline transition">
+                Lihat semua tarikh
+              </button>
+            )}
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 animate-fade-in-up">
+          <div className="bg-transparent md:bg-white md:rounded-2xl md:shadow-sm overflow-hidden md:border border-gray-100 animate-fade-in-up">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-100 text-gray-800 uppercase text-xs tracking-wider font-bold">
-                    <th className="p-4 border-b border-gray-200">Tarikh & Masa</th>
-                    <th className="p-4 border-b border-gray-200">Client</th>
-                    <th className="p-4 border-b border-gray-200">Pakej</th>
-                    {/* COLUMN BARU */}
-                    <th className="p-4 border-b border-gray-200">Referral (Staff)</th>
-                    <th className="p-4 border-b border-gray-200">Status</th>
-                    <th className="p-4 border-b border-gray-200 text-center">Action</th>
+              <table className="w-full text-left border-collapse block md:table">
+                <thead className="hidden md:table-header-group">
+                  <tr className="bg-[#412986] text-white uppercase text-xs tracking-wider font-semibold">
+                    <th className="p-5">Tarikh & Masa</th>
+                    <th className="p-5">Client</th>
+                    <th className="p-5">Pakej</th>
+                    <th className="p-5">Referral (Staff)</th>
+                    <th className="p-5">Status</th>
+                    <th className="p-5 text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="block md:table-row-group divide-y divide-gray-100">
                   {bookings.map((book) => (
-                    <tr key={book.id} className="hover:bg-blue-50 transition duration-150 group">
-                      <td className="p-4">
-                        <div className="font-bold text-gray-900">{formatDate(book.booking_date)}</div>
-                        <div className="text-blue-700 font-mono text-lg font-bold">{book.start_time?.slice(0,5)}</div>
-                      </td>
-                      <td className="p-4">
-                        <div className="font-bold text-gray-900">{book.client_name}</div>
-                        <div className="text-xs text-gray-500">{book.client_email}</div>
-                        <div className="text-xs text-gray-500">{book.client_phone}</div>
-                      </td>
-                      <td className="p-4">
-                        {book.services ? (
-                            <div>
-                                <span className="bg-gray-100 text-gray-900 text-xs font-bold px-2 py-1 rounded border border-gray-300 whitespace-nowrap">
-                                    {book.services.name}
-                                </span>
-                                {/* Papar Harga Akhir */}
-                                <div className="text-xs text-gray-500 mt-1 font-mono">
-                                    Paid: RM{book.final_price || '-'}
-                                </div>
-                            </div>
-                        ) : (
-                            <span className="text-red-600 text-xs font-bold">Deleted Service</span>
-                        )}
+                    <tr key={book.id} className="block md:table-row hover:bg-[#412986]/5 transition duration-150 mb-4 md:mb-0 bg-white rounded-xl shadow-sm md:shadow-none border border-gray-100 md:border-none">
+                      
+                      <td className="p-4 md:p-5 flex justify-between md:table-cell items-center md:items-start border-b border-gray-50 md:border-none">
+                        <span className="md:hidden font-bold text-xs text-gray-500 uppercase">Tarikh & Masa</span>
+                        <div className="text-right md:text-left">
+                          <div className="font-bold text-gray-900">{formatDate(book.booking_date)}</div>
+                          <div className="text-[#412986] font-mono text-lg font-extrabold">{book.start_time?.slice(0,5)}</div>
+                        </div>
                       </td>
                       
-                      {/* DATA REFERRAL BARU */}
-                      <td className="p-4">
-                        {book.referral_code ? (
-                            <span className="bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded border border-purple-200">
-                                🏷️ {book.referral_code}
-                            </span>
-                        ) : (
-                            <span className="text-gray-300 text-xs">-</span>
-                        )}
+                      <td className="p-4 md:p-5 flex justify-between md:table-cell items-center md:items-start border-b border-gray-50 md:border-none">
+                        <span className="md:hidden font-bold text-xs text-gray-500 uppercase">Client</span>
+                        <div className="text-right md:text-left">
+                          <div className="font-bold text-gray-900">{book.client_name}</div>
+                          <div className="text-xs text-gray-500">{book.client_email}</div>
+                          <div className="text-xs text-gray-500">{book.client_phone}</div>
+                        </div>
+                      </td>
+                      
+                      <td className="p-4 md:p-5 flex justify-between md:table-cell items-center md:items-start border-b border-gray-50 md:border-none">
+                        <span className="md:hidden font-bold text-xs text-gray-500 uppercase">Pakej</span>
+                        <div className="text-right md:text-left">
+                          {book.services ? (
+                              <div className="flex flex-col items-end md:items-start">
+                                  <span className="bg-gray-100 text-gray-800 text-xs font-bold px-2.5 py-1 rounded-md border border-gray-200 whitespace-nowrap">
+                                      {book.services.name}
+                                  </span>
+                                  <div className="text-xs text-gray-500 mt-1.5 font-mono font-medium">
+                                      Paid: RM{book.final_price || '-'}
+                                  </div>
+                              </div>
+                          ) : (
+                              <span className="text-red-600 text-xs font-bold bg-red-50 px-2 py-1 rounded-md">Deleted Service</span>
+                          )}
+                        </div>
+                      </td>
+                      
+                      <td className="p-4 md:p-5 flex justify-between md:table-cell items-center md:items-start border-b border-gray-50 md:border-none">
+                        <span className="md:hidden font-bold text-xs text-gray-500 uppercase">Referral</span>
+                        <div className="text-right md:text-left">
+                          {book.referral_code ? (
+                              <span className="bg-[#412986]/10 text-[#412986] text-xs font-bold px-2.5 py-1 rounded-md border border-[#412986]/20 inline-flex items-center gap-1">
+                                  🏷️ {book.referral_code}
+                              </span>
+                          ) : (
+                              <span className="text-gray-300 text-xs font-medium">-</span>
+                          )}
+                        </div>
                       </td>
 
-                      <td className="p-4">
-                        {book.status === 'paid' ? (
-                            <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full border border-green-200">
-                                ✅ PAID
-                            </span>
-                        ) : (
-                            <span className="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full border border-yellow-200">
-                                ⏳ PENDING
-                            </span>
-                        )}
+                      <td className="p-4 md:p-5 flex justify-between md:table-cell items-center md:items-start border-b border-gray-50 md:border-none">
+                        <span className="md:hidden font-bold text-xs text-gray-500 uppercase">Status</span>
+                        <div className="text-right md:text-left">
+                          {book.status === 'paid' ? (
+                              <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full border border-green-200">
+                                  ✅ PAID
+                              </span>
+                          ) : (
+                              <span className="bg-yellow-100 text-yellow-700 text-xs font-bold px-3 py-1.5 rounded-full border border-yellow-200">
+                                  ⏳ PENDING
+                              </span>
+                          )}
+                        </div>
                       </td>
-                      <td className="p-4 flex justify-center gap-2">
-                        <a href={getWhatsappLink(book.client_phone, book.client_name, formatDate(book.booking_date), book.start_time)} target="_blank" className="w-9 h-9 flex items-center justify-center bg-green-500 text-white rounded-lg hover:bg-green-600 shadow-sm transition" title="WhatsApp Client"><FaWhatsapp size={20} /></a>
-                        <button onClick={() => handleDelete(book.id, book.client_name)} className="w-9 h-9 flex items-center justify-center bg-white border border-red-200 text-red-500 rounded-lg hover:bg-red-50 hover:text-red-700 transition" title="Padam Booking">🗑️</button>
+                      
+                      <td className="p-4 md:p-5 flex justify-center md:justify-center items-center gap-3">
+                        <a href={getWhatsappLink(book.client_phone, book.client_name, formatDate(book.booking_date), book.start_time)} target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center bg-[#25D366] text-white rounded-xl hover:bg-[#1ebe57] shadow-sm transition hover:scale-105" title="WhatsApp Client">
+                          <FaWhatsapp size={22} />
+                        </a>
+                        <button onClick={() => handleDelete(book.id, book.client_name)} className="w-10 h-10 flex items-center justify-center bg-white border border-red-200 text-red-500 rounded-xl hover:bg-red-50 hover:text-red-700 transition hover:scale-105 shadow-sm" title="Padam Booking">
+                          🗑️
+                        </button>
                       </td>
+                      
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <div className="bg-gray-50 p-3 text-xs text-gray-500 text-center border-t border-gray-200">
-                Menunjukkan {bookings.length} tempahan {filterDate ? `untuk tarikh ${filterDate}` : "keseluruhan"}.
+            
+            <div className="bg-gray-50 p-4 text-xs text-gray-500 text-center border-t border-gray-100 hidden md:block">
+                Menunjukkan <span className="font-bold text-[#412986]">{bookings.length}</span> tempahan {filterDate ? `untuk tarikh ${formatDate(filterDate)}` : "keseluruhan"}.
             </div>
           </div>
         )}
+
+        {/* MOBILE FOOTER COUNTER */}
+        {!loading && bookings.length > 0 && (
+          <div className="md:hidden mt-4 text-center text-xs text-gray-500 pb-8">
+            Menunjukkan <span className="font-bold text-[#412986]">{bookings.length}</span> tempahan {filterDate ? `untuk tarikh ${formatDate(filterDate)}` : "keseluruhan"}.
+          </div>
+        )}
+
       </div>
     </div>
   );
