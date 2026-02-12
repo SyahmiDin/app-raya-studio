@@ -491,34 +491,37 @@ function BookingContent() {
                     <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-5">
                         
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Kod Referral</label>
-                            <div className="flex gap-3">
-                                <input 
-                                    type="text" 
-                                    placeholder="CTH: STAFF023" 
-                                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#412986] outline-none text-gray-700 bg-white placeholder-gray-400 font-bold uppercase" 
-                                    onChange={(e) => {
-                                        setFormData({...formData, referral: e.target.value.toUpperCase()});
-                                        setPromoStatus(null); // Reset status bila user taip baru
-                                        setPromoMessage("");
-                                    }} 
-                                    value={formData.referral} 
-                                />
-                                <button 
-                                    type="button" 
-                                    disabled={promoStatus === 'checking'}
-                                    className="bg-[#1e293b] text-white font-bold px-6 rounded-lg hover:bg-black transition-colors disabled:opacity-50 min-w-[100px]" 
-                                    onClick={checkReferralCode}
-                                >
-                                    {promoStatus === 'checking' ? '...' : 'Check'}
-                                </button>
-                            </div>
-                            {promoMessage && (
-                                <p className={`text-xs font-bold mt-2 ${promoStatus === 'valid' ? 'text-green-600' : 'text-red-500'}`}>
-                                    {promoMessage}
-                                </p>
-                            )}
-                        </div>
+    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Kod Referral</label>
+    
+    <div className="flex flex-col sm:flex-row gap-3">
+        <input 
+            type="text" 
+            placeholder="CTH: STAFF023" 
+            className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#412986] outline-none text-gray-700 bg-white placeholder-gray-400 font-bold uppercase" 
+            onChange={(e) => {
+                setFormData({...formData, referral: e.target.value.toUpperCase()});
+                setPromoStatus(null); 
+                setPromoMessage("");
+            }} 
+            value={formData.referral} 
+        />
+        <button 
+            type="button" 
+            disabled={promoStatus === 'checking'}
+            /* PERUBAHAN 2: Tambah 'w-full sm:w-auto' dan 'py-3 sm:py-0' supaya button penuh di mobile */
+            className="bg-[#1e293b] text-white font-bold px-6 py-3 sm:py-0 rounded-lg hover:bg-black hover:cursor-pointer transition-colors disabled:opacity-50 min-w-[100px] w-full sm:w-auto" 
+            onClick={checkReferralCode}
+        >
+            {promoStatus === 'checking' ? '...' : 'Check'}
+        </button>
+    </div>
+
+    {promoMessage && (
+        <p className={`text-xs font-bold mt-2 ${promoStatus === 'valid' ? 'text-green-600' : 'text-red-500'}`}>
+            {promoMessage}
+        </p>
+    )}
+</div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
