@@ -68,7 +68,8 @@ export async function POST(request) {
             service_id: service.id,
             status: 'pending', // <--- PENTING: Status Pending
             final_price: service.price,
-            referral_code: customer.referral || null
+            referral_code: customer.referral || null,
+            pax: customer.pax
         }])
         .select()
         .single();
@@ -112,6 +113,7 @@ export async function POST(request) {
         package_name: service.name,
         price: service.price,
         referral_code: customer.referral || "",
+        pax: customer.pax
       },
 
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,

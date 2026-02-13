@@ -49,8 +49,7 @@ export async function GET(request) {
     // --- SENARAI STAFF YANG AKAN TERIMA NOTIFIKASI ---
     const staffEmails = [
         "syahmi@dhdgroup.com.my",
-        "zaid@dhdgroup.com.my",
-        "luqman@dhdgroup.com.my"
+        "zaid@dhdgroup.com.my"
     ];
 
     // 3. HANTAR EMAIL KE CLIENT (Resit)
@@ -63,6 +62,7 @@ export async function GET(request) {
             <h2 style="color: #333;">Terima Kasih, ${info.client_name}!</h2>
             <p>Bayaran anda sebanyak <strong>RM${info.final_price_paid}</strong> telah diterima.</p>
             <p><strong>Pakej:</strong> ${packageName}</p>
+            <p><strong>Pax:</strong> ${info.pax}</p>
             <p><strong>Tarikh:</strong> ${info.booking_date} @ ${info.start_time}</p>
             <br>
             <a href="${receiptUrl}" style="background-color: #2563EB; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">📄 Lihat Resit Rasmi</a>
@@ -74,7 +74,7 @@ export async function GET(request) {
     await transporter.sendMail({
         from: '"Sistem Booking" <admin@dhdgroup.com.my>',
         to: staffEmails, 
-        subject: `NEW BOOKING: ${info.client_name} (RM${info.final_price_paid})`,
+        subject: `TEMPAHAN BAHARU: ${info.client_name} (RM${info.final_price_paid})`,
         html: `
             <div style="font-family: Arial, sans-serif; border: 2px solid green; padding: 20px; background-color: #f0fff4;">
                 <h2 style="color: green; margin-top: 0;">Tempahan Baharu!</h2>
@@ -84,6 +84,7 @@ export async function GET(request) {
                     <li><strong>Nama:</strong> ${info.client_name}</li>
                     <li><strong>Phone:</strong> <a href="tel:${info.client_phone}">${info.client_phone}</a></li>
                     <li><strong>Pakej:</strong> ${packageName}</li>
+                    <li><strong>Pax:</strong> ${info.pax}</li>
                     <li><strong>Tarikh:</strong> ${info.booking_date}</li>
                     <li><strong>Masa:</strong> ${info.start_time}</li>
                 </ul>

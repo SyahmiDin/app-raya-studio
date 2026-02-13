@@ -320,6 +320,7 @@ export default function MonitorPage() {
                                 <div className="flex justify-between"><span className="text-gray-500">Phone:</span><span className="font-bold text-gray-800">{selectedBooking.client_phone}</span></div>
                                 <div className="flex justify-between"><span className="text-gray-500">Email:</span><span className="font-bold text-gray-800 truncate max-w-[150px]">{selectedBooking.client_email}</span></div>
                                 <div className="flex justify-between"><span className="text-gray-500">Code:</span><span className="font-mono font-bold bg-white border px-2 py-0.5 rounded text-gray-600">{selectedBooking.referral_code || '-'}</span></div>
+                                <div className="flex justify-between"><span className="text-gray-500">Pax:</span><span className="font-mono font-bold bg-white border px-2 py-0.5 rounded text-gray-600">{selectedBooking.pax || '0'}</span></div>
                             </div>
 
                             <div className="flex gap-2 pt-2">

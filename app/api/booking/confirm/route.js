@@ -30,7 +30,7 @@ export async function POST(request) {
     }
 
     // 2. Ambil info dari Metadata
-    const { service_id, booking_date, start_time, client_name, client_email, client_phone } = session.metadata;
+    const { service_id, booking_date, start_time, client_name, client_email, client_phone, pax } = session.metadata;
 
     // 3. Simpan ke Database
     const { data, error } = await supabase
@@ -43,7 +43,8 @@ export async function POST(request) {
             booking_date,
             start_time,
             status: "paid",
-            stripe_payment_id: session.id
+            stripe_payment_id: session.id,
+            pax
         }])
         .select();
 
