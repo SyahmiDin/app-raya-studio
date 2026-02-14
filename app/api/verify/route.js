@@ -49,7 +49,11 @@ export async function GET(request) {
     // --- SENARAI STAFF YANG AKAN TERIMA NOTIFIKASI ---
     const staffEmails = [
         "syahmi@dhdgroup.com.my",
-        "zaid@dhdgroup.com.my"
+        "zaid@dhdgroup.com.my",
+        "luqman@dhdgroup.com.my",
+        "suhail@dhdgroup.com.my",
+        "hazrul@dhdgroup.com.my",
+        "qayyum@dhdgroup.com.my"
     ];
 
     // 3. HANTAR EMAIL KE CLIENT (Resit)
