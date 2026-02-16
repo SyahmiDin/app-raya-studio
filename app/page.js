@@ -22,6 +22,16 @@ export default function Home() {
 
     // --- 3. CONFIG GAMBAR & CAROUSEL ---
     const galleryImages = ["/bd1.jpeg", "/bd2.jpeg", "/bd6.jpeg", "/bd7.jpeg"];
+    const testimoniImages = [
+        "/backdrop/bd1.jpeg",
+        "/backdrop/bd2.jpeg",
+        "/backdrop/backdrop1.jpeg",
+        "/backdrop/backdrop2.jpeg",
+        "/backdrop/backdrop3.jpeg",
+        "/backdrop/backdrop4.jpeg",
+        "/backdrop/backdrop5.jpeg",
+        "/backdrop/backdrop6.jpeg"
+    ];
 
     const [imageIndex, setImageIndex] = useState(0);
     const [direction, setDirection] = useState(0); // 1 = kanan, -1 = kiri
@@ -32,15 +42,15 @@ export default function Home() {
         setImageIndex((prev) => {
             let nextIndex = prev + newDirection;
             // Logic loop: Kalau lebih, balik ke 0. Kalau kurang, pergi ke last.
-            if (nextIndex < 0) nextIndex = galleryImages.length - 1;
-            if (nextIndex >= galleryImages.length) nextIndex = 0;
+            if (nextIndex < 0) nextIndex = testimoniImages.length - 1;
+            if (nextIndex >= testimoniImages.length) nextIndex = 0;
             return nextIndex;
         });
     };
 
     // Logic untuk dapatkan index kiri dan kanan secara circular
     const getIndex = (i) => {
-        return (i + galleryImages.length) % galleryImages.length;
+        return (i + testimoniImages.length) % testimoniImages.length;
     };
 
     const containerVariants = {
@@ -389,7 +399,7 @@ export default function Home() {
                                 className={`absolute w-[85%] md:w-[70%] aspect-video rounded-2xl shadow-2xl overflow-hidden cursor-pointer border-[3px] ${isCenter ? "border-white/50" : "border-transparent"}`}
                             >
                                 <img
-                                    src={galleryImages[index]}
+                                    src={testimoniImages[index]}
                                     alt="Galeri"
                                     className="w-full h-full object-cover pointer-events-none"
                                 />
