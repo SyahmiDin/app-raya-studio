@@ -1,5 +1,5 @@
 export default function sitemap() {
-  const baseUrl = 'https://studioabg.vercel.app'; // Ganti dengan domain sebenar
+  const baseUrl = 'https://studioabg.vercel.app';
 
   return [
     {

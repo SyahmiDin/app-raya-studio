@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   description: "Tempah Slot Photoshoot Raya 2026 di Bandar Baru Enstek. Gambar keluarga kualiti HD, studio selesa & harga berpatutan. Pakej bermula RM50.",
   
-  // --- KATA KUNCI CARIAN GOOGLE ---
+  // --- KATA KUNCI GOOGLE SEARCH ---
   keywords: [
     "Studio Gambar Raya Nilai", 
     "Studio Photoshoot Enstek", 
@@ -80,7 +80,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Studio ABG Raya 2026",
     description: "Tempah slot gambar raya anda di Bandar Baru Enstek sekarang.",
-    images: ['/og-image.jpg'], // Guna gambar yang sama
+    images: ['/bd2.jpeg'], // Guna gambar yang sama
   },
 };
 
