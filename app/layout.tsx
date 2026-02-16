@@ -64,7 +64,7 @@ export const metadata: Metadata = {
 
   // --- SOCIAL MEDIA SHARING (WHATSAPP/FB) ---
   openGraph: {
-    title: "Studio ABG Raya 2026 - Jom Booking Slot!",
+    title: "ABG Studio Raya 2026 - Jom Booking Slot!",
     description: "Abadikan kenangan Syawal anda. Klik untuk lihat pakej dan tempah slot sekarang.",
     url: baseURL,
     siteName: "Studio ABG",
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: '/backdrop/backdrop3.jpeg', // Pastikan Tuan upload gambar cantik nama 'og-image.jpg' dalam folder 'public'
+        url: '/backdrop/backdrop3.jpeg', 
         width: 1200,
         height: 630,
         alt: 'Suasana Studio ABG Raya',
