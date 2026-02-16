@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "Studio ABG | Galeri Eksklusif",
-  description: "Muat turun gambar raya anda dengan kualiti HD di sini.",
+  description: "Tempah Slot Photoshoot anda di sini! Muat turun gambar raya anda dengan kualiti HD di sini.",
   icons: {
-    icon: "/favicon.ico", 
+    icon: "/abg.ico", 
   },
   openGraph: {
     title: "Studio ABG 2026",
