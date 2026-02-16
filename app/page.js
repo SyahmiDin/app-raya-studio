@@ -115,11 +115,11 @@ export default function Home() {
             {/* BACKGROUND - Tukar absolute ke fixed supaya bg kekal penuh bila scroll di mobile */}
             <div className="fixed inset-0 z-0">
                 <img
-                    src="/bd2.jpeg"
+                    src="/backdrop/backdrop3.jpeg"
                     alt="Background Studio"
                     className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-black/80"></div>
+                <div className="absolute inset-0 bg-black/0"></div>
             </div>
 
             {/* NAVBAR */}
@@ -134,7 +134,7 @@ export default function Home() {
                 {/* --- TAJUK & SUBTAJUK DENGAN MOTION --- */}
                 {/* --- TAJUK & SUBTAJUK DENGAN MOTION --- */}
                 <motion.h1
-                    className="relative z-10 text-3xl sm:text-5xl md:text-7xl font-black text-white mb-6 drop-shadow-lg flex items-start justify-center gap-2 md:gap-6 overflow-hidden py-4"
+                    className="relative z-10 text-3xl sm:text-5xl md:text-7xl font-black text-[#f6f6f6] mb-6 drop-shadow-lg flex items-start justify-center gap-2 md:gap-6 overflow-hidden py-4"
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
@@ -219,7 +219,7 @@ export default function Home() {
                               return (
                                   <div
                                       key={service.id}
-                                      className="animate-custom-fade flex flex-col justify-between bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-white hover:bg-white/20 transition duration-300 relative overflow-hidden shadow-xl"
+                                      className="animate-custom-fade flex flex-col justify-between bg-black/50 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-white hover:bg-black/70 transition duration-300 relative overflow-hidden shadow-xl"
                                       style={{
                                           animationDelay: `${index * 200}ms`,
                                       }}
