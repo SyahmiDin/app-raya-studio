@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   
 // --- PENGESAHAN GOOGLE SEARCH CONSOLE (BARU TAMBAH) ---
   verification: {
-    google: "58oMjd6RUtvLPQAUyi7LeBEvime6ktAl0PZtfticvko",
+    google: "58oMjd6RUtvLPQAUyi7LeBEvime6ktAl0PZtfticvko", // <meta name="google-site-verification" content="58oMjd6RUtvLPQAUyi7LeBEvime6ktAl0PZtfticvko" />
   },
 
   // --- KATA KUNCI GOOGLE SEARCH ---
