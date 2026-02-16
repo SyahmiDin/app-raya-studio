@@ -76,7 +76,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: '${baseURL}/backdrop/backdrop3.jpeg', 
+        url: '/backdrop/backdrop3.jpeg', 
         width: 1200,
         height: 630,
         alt: 'Suasana Studio ABG Raya',
@@ -89,7 +89,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Studio ABG Raya 2026",
     description: "Tempah slot gambar raya anda di Bandar Baru Enstek sekarang.",
-    images: ['${baseURL}/backdrop/backdrop3.jpeg'], // Guna gambar yang sama
+    images: ['/backdrop/backdrop3.jpeg'], // Guna gambar yang sama
   },
 };
 
