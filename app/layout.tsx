@@ -19,6 +19,10 @@ const baseURL = "https://studioabg.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseURL), // Wajib ada untuk fix isu gambar tak keluar di WhatsApp
+
+  alternates: {
+    canonical: '/',
+  },
   title: {
     default: "Studio ABG | Galeri Eksklusif & Tempahan Raya",
     template: "%s | Studio ABG", // Contoh page lain: "Booking | Studio ABG"
@@ -72,7 +76,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: '/backdrop/backdrop3.jpeg', 
+        url: '${baseURL}/backdrop/backdrop3.jpeg', 
         width: 1200,
         height: 630,
         alt: 'Suasana Studio ABG Raya',
@@ -85,7 +89,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Studio ABG Raya 2026",
     description: "Tempah slot gambar raya anda di Bandar Baru Enstek sekarang.",
-    images: ['/backdrop/backdrop3.jpeg'], // Guna gambar yang sama
+    images: ['${baseURL}/backdrop/backdrop3.jpeg'], // Guna gambar yang sama
   },
 };
 
