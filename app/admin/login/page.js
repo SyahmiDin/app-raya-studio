@@ -61,7 +61,7 @@ export default function AdminLoginPage() {
 
           <button 
             type="submit" 
-            className="w-full bg-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 transition"
+            className="w-full bg-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 hover:cursor-pointer transition"
           >
             MASUK
           </button>

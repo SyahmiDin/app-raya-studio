@@ -42,7 +42,7 @@ export default function AdminLayout({ children }) {
                     localStorage.removeItem("studioRayaAdmin"); // Buang kunci
                     router.push("/admin/login"); // Tendang keluar
                 }}
-                className="bg-red-600 text-white px-4 py-2 rounded-full shadow-lg font-bold text-xs hover:bg-red-700 transition"
+                className="bg-red-600 text-white px-4 py-2 rounded-full shadow-lg font-bold text-xs hover:bg-red-700 hover:cursor-pointer transition"
                >
                    Log Keluar
                </button>
