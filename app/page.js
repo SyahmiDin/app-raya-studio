@@ -297,7 +297,7 @@ export default function Home() {
                             name: "Studio ABG Raya",
                             image: "https://studioabg.vercel.app/bd2.jpeg", // URL Logo
                             telephone: "+60128384048",
-                            url: "https://studio-abg.com",
+                            url: "https://studioabg.vercel.app",
                             address: {
                                 "@type": "PostalAddress",
                                 streetAddress: "60-2, Jalan Timur 6/2D",
