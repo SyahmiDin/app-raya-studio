@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Script from "next/script";
 
 export default function Home() {
@@ -30,7 +30,7 @@ export default function Home() {
         "/backdrop/backdrop3.jpeg",
         "/backdrop/backdrop4.jpeg",
         "/backdrop/backdrop5.jpeg",
-        "/backdrop/backdrop6.jpeg"
+        "/backdrop/backdrop6.jpeg",
     ];
 
     const [imageIndex, setImageIndex] = useState(0);
@@ -52,6 +52,43 @@ export default function Home() {
     const getIndex = (i) => {
         return (i + testimoniImages.length) % testimoniImages.length;
     };
+
+    // --- STATE & CONFIG BACKGROUND BERTUKAR ---
+    
+    // 1. Gambar Landscape (Desktop/Tablet)
+    const desktopImages = [
+        "/backdrop/backdrop3.jpeg",
+        "/backdrop/backdrop1.jpeg",
+        "/backdrop/backdrop2.jpeg",
+        "/backdrop/backdrop4.jpeg",
+        "/backdrop/backdrop5.jpeg",
+        "/backdrop/backdrop6.jpeg",
+    ];
+
+    // 2. Gambar Portrait (Mobile - Sila tukar dengan nama file sebenar)
+    const mobileImages = [
+        "/backdrop/mb1.jpg",
+        "/backdrop/mb2.jpg",
+        "/backdrop/mb3.jpg",
+        "/backdrop/mb4.jpg",
+        "/backdrop/mb5.jpg",
+        "/backdrop/mb6.jpg",
+        "/backdrop/mb7.jpg"
+    ];
+
+    const [bgIndex, setBgIndex] = useState(0);
+
+    // Logic timer ini KEKAL SAMA (tak perlu ubah)
+    useEffect(() => {
+        const interval = setInterval(() => {
+            // Kita guna index infiniti, nanti kita guna % (modulo) untuk loop
+            setBgIndex((prev) => prev + 1);
+        }, 3000); 
+
+        return () => clearInterval(interval);
+    }, []);
+
+    // --- STATE & CONFIG BACKGROUND BERTUKAR TAMAT---
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -112,14 +149,52 @@ export default function Home() {
   }
 `}</style>
 
-            {/* BACKGROUND - Tukar absolute ke fixed supaya bg kekal penuh bila scroll di mobile */}
-            <div className="fixed inset-0 z-0">
-                <img
-                    src="/backdrop/backdrop3.jpeg"
-                    alt="Background Studio"
-                    className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/50"></div>
+            {/* BACKGROUND - Updated: Bertukar dengan dissolve */}
+            {/* BACKGROUND WRAPPER */}
+            <div className="fixed inset-0 z-0 bg-black">
+                
+                {/* A. VERSION DESKTOP (Landscape) - Hidden on Mobile */}
+                <div className="hidden md:block w-full h-full absolute inset-0">
+                    <AnimatePresence initial={false}>
+                        <motion.img
+                            key={bgIndex}
+                            // Logic loop: index % jumlah gambar desktop
+                            src={desktopImages[bgIndex % desktopImages.length]} 
+                            alt="Background Desktop"
+                            className="absolute inset-0 w-full h-full object-cover"
+                            initial={{ opacity: 0, scale: 1.1 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{
+                                opacity: { duration: 1.5, ease: "easeInOut" },
+                                scale: { duration: 6, ease: "linear" }
+                            }}
+                        />
+                    </AnimatePresence>
+                </div>
+
+                {/* B. VERSION MOBILE (Portrait) - Hidden on Desktop */}
+                <div className="block md:hidden w-full h-full absolute inset-0">
+                    <AnimatePresence initial={false}>
+                        <motion.img
+                            key={bgIndex}
+                            // Logic loop: index % jumlah gambar mobile
+                            src={mobileImages[bgIndex % mobileImages.length]} 
+                            alt="Background Mobile"
+                            className="absolute inset-0 w-full h-full object-cover"
+                            initial={{ opacity: 0, scale: 1.1 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{
+                                opacity: { duration: 1.5, ease: "easeInOut" },
+                                scale: { duration: 6, ease: "linear" }
+                            }}
+                        />
+                    </AnimatePresence>
+                </div>
+
+                {/* Overlay Gelap (Kekal) */}
+                <div className="absolute inset-0 bg-black/50 z-10"></div>
             </div>
 
             {/* NAVBAR */}
@@ -203,89 +278,89 @@ export default function Home() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full mb-12">
                     {services.length === 0
                         ? /* Loading State */
-                          [1, 2, 3].map((i) => (
-                              <div
-                                  key={i}
-                                  className="bg-white/10 h-40 rounded-xl animate-pulse"
-                              ></div>
-                          ))
+                        [1, 2, 3].map((i) => (
+                            <div
+                                key={i}
+                                className="bg-white/10 h-40 rounded-xl animate-pulse"
+                            ></div>
+                        ))
                         : /* Data Loaded */
-                          services.map((service, index) => {
-                              // Logic Kiraan Harga Asal (Display Sahaja)
-                              const originalPrice = Math.ceil(
-                                  service.price / 0.9,
-                              );
+                        services.map((service, index) => {
+                            // Logic Kiraan Harga Asal (Display Sahaja)
+                            const originalPrice = Math.ceil(
+                                service.price / 0.9,
+                            );
 
-                              return (
-                                  <div
-                                      key={service.id}
-                                      className="animate-custom-fade flex flex-col justify-between bg-black/50 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-white hover:bg-black/70 transition duration-300 relative overflow-hidden shadow-xl"
-                                      style={{
-                                          animationDelay: `${index * 200}ms`,
-                                      }}
-                                  >
-                                      {/* Badge Early Bird */}
-                                      <div className="absolute top-0 right-0 bg-[#412986] text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider shadow-md">
-                                          Early Bird
-                                      </div>
+                            return (
+                                <div
+                                    key={service.id}
+                                    className="animate-custom-fade flex flex-col justify-between bg-black/50 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-white hover:bg-black/70 transition duration-300 relative overflow-hidden shadow-xl"
+                                    style={{
+                                        animationDelay: `${index * 200}ms`,
+                                    }}
+                                >
+                                    {/* Badge Early Bird */}
+                                    <div className="absolute top-0 right-0 bg-[#412986] text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider shadow-md">
+                                        Early Bird
+                                    </div>
 
-                                      <div>
-                                          <h3 className="font-extrabold text-xl mb-2 text-gray-100 tracking-wide">
-                                              {service.name}
-                                          </h3>
+                                    <div>
+                                        <h3 className="font-extrabold text-xl mb-2 text-gray-100 tracking-wide">
+                                            {service.name}
+                                        </h3>
 
-                                          {/* --- HARGA SECTION --- */}
-                                          <div className="flex flex-col mb-4 bg-black/20 p-3 rounded-lg border border-white/5">
-                                              <div className="flex items-center gap-2 justify-center">
-                                                  <span className="text-gray-400 line-through text-sm decoration-red-500/70 decoration-2">
-                                                      RM{originalPrice}
-                                                  </span>
-                                                  <span className="bg-[#412986] text-white text-[10px] font-bold px-1.5 rounded">
-                                                      -10% OFF
-                                                  </span>
-                                              </div>
-                                              <div className="text-4xl font-black text-white drop-shadow-sm mt-1">
-                                                  RM{service.price}
-                                              </div>
-                                          </div>
+                                        {/* --- HARGA SECTION --- */}
+                                        <div className="flex flex-col mb-4 bg-black/20 p-3 rounded-lg border border-white/5">
+                                            <div className="flex items-center gap-2 justify-center">
+                                                <span className="text-gray-400 line-through text-sm decoration-red-500/70 decoration-2">
+                                                    RM{originalPrice}
+                                                </span>
+                                                <span className="bg-[#412986] text-white text-[10px] font-bold px-1.5 rounded">
+                                                    -10% OFF
+                                                </span>
+                                            </div>
+                                            <div className="text-4xl font-black text-white drop-shadow-sm mt-1">
+                                                RM{service.price}
+                                            </div>
+                                        </div>
 
-                                          <p className="text-sm text-gray-200 mb-4 leading-relaxed opacity-90">
-                                              {service.description}
-                                          </p>
+                                        <p className="text-sm text-gray-200 mb-4 leading-relaxed opacity-90">
+                                            {service.description}
+                                        </p>
 
-                                          <div className="flex justify-center mb-6">
-                                              <div className="text-xs bg-white/10 border border-white/20 inline-flex items-center gap-1 px-3 py-1 rounded-full text-gray-200 font-medium">
-                                                  ⏱️ {service.duration_minutes}{" "}
-                                                  Minit/Sesi
-                                              </div>
-                                          </div>
-                                          <div className="flex justify-center mb-6">
-                                              {/* Ubah px-15 kepada px-6 supaya muat mobile, dan tambah w-full */}
-                                              <div className="text-lg bg-black/20 inline-flex items-center justify-center w-full px-6 py-5 rounded-lg text-gray-200 font-medium text-left">
-                                                  <div>
-                                                      - ⁠Unlimited Shot
-                                                      <br /> - ⁠Posing Guidance
-                                                      <br /> - ⁠All edited
-                                                      photos
-                                                      <br /> - ⁠Send via cloud
-                                                  </div>
-                                              </div>
-                                          </div>
-                                      </div>
+                                        <div className="flex justify-center mb-6">
+                                            <div className="text-xs bg-white/10 border border-white/20 inline-flex items-center gap-1 px-3 py-1 rounded-full text-gray-200 font-medium">
+                                                ⏱️ {service.duration_minutes}{" "}
+                                                Minit/Sesi
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-center mb-6">
+                                            {/* Ubah px-15 kepada px-6 supaya muat mobile, dan tambah w-full */}
+                                            <div className="text-lg bg-black/20 inline-flex items-center justify-center w-full px-6 py-5 rounded-lg text-gray-200 font-medium text-left">
+                                                <div>
+                                                    - ⁠Unlimited Shot
+                                                    <br /> - ⁠Posing Guidance
+                                                    <br /> - ⁠All edited
+                                                    photos
+                                                    <br /> - ⁠Send via cloud
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                      {/* --- BUTTON KHAS PADA SETIAP CARD --- */}
-                                      <Link
-                                          href={`/booking?package=${service.id}`}
-                                          className="w-full py-3 rounded-xl bg-[#412986] text-white font-bold hover:bg-[#301F63] hover:scale-105 transition transform shadow-lg flex items-center justify-center gap-2 group"
-                                      >
-                                          <span>TEMPAH SEKARANG</span>
-                                          <span className="group-hover:translate-x-3 transition-transform">
-                                              ➜
-                                          </span>
-                                      </Link>
-                                  </div>
-                              );
-                          })}
+                                    {/* --- BUTTON KHAS PADA SETIAP CARD --- */}
+                                    <Link
+                                        href={`/booking?package=${service.id}`}
+                                        className="w-full py-3 rounded-xl bg-[#412986] text-white font-bold hover:bg-[#301F63] hover:scale-105 transition transform shadow-lg flex items-center justify-center gap-2 group"
+                                    >
+                                        <span>TEMPAH SEKARANG</span>
+                                        <span className="group-hover:translate-x-3 transition-transform">
+                                            ➜
+                                        </span>
+                                    </Link>
+                                </div>
+                            );
+                        })}
                 </div>
 
                 {/* Promo Text - Ubah padding supaya text tak terhimpit */}
