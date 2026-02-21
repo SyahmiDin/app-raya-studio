@@ -366,7 +366,7 @@ export default function Home() {
                 {/* Promo Text - Ubah padding supaya text tak terhimpit */}
                 <div className="max-w-6xl w-full bg-black/50 py-4 px-4 md:px-12 rounded-xl mb-4 animate-fade-in-up delay-100 border border-white/10">
                     <p className="text-white text-base md:text-xl drop-shadow-md italic animate-pulse">
-                        Harga promo 'Early Bird' terhad sehingga 20 Februari
+                        Harga promo 'Early Bird' terhad sehingga 27 Februari
                         2026 11.59 malam sahaja!
                     </p>
                 </div>
