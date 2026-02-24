@@ -31,6 +31,14 @@ export default function Home() {
         "/backdrop/backdrop4.jpeg",
         "/backdrop/backdrop5.jpeg",
         "/backdrop/backdrop6.jpeg",
+        "/backdrop/backdrop7.jpg",
+        "/backdrop/backdrop8.jpg",
+        "/backdrop/backdrop9.jpg",
+        "/backdrop/backdrop10.jpg",
+        "/backdrop/backdrop11.jpg",
+        "/backdrop/backdrop12.jpg",
+        "/backdrop/backdrop13.jpg",
+        "/backdrop/backdrop14.jpg"
     ];
 
     const [imageIndex, setImageIndex] = useState(0);
@@ -42,19 +50,19 @@ export default function Home() {
         setImageIndex((prev) => {
             let nextIndex = prev + newDirection;
             // Logic loop: Kalau lebih, balik ke 0. Kalau kurang, pergi ke last.
-            if (nextIndex < 0) nextIndex = testimoniImages.length - 1;
-            if (nextIndex >= testimoniImages.length) nextIndex = 0;
+            if (nextIndex < 0) nextIndex = mobileImages.length - 1;
+            if (nextIndex >= mobileImages.length) nextIndex = 0;
             return nextIndex;
         });
     };
 
     // Logic untuk dapatkan index kiri dan kanan secara circular
     const getIndex = (i) => {
-        return (i + testimoniImages.length) % testimoniImages.length;
+        return (i + mobileImages.length) % mobileImages.length;
     };
 
     // --- STATE & CONFIG BACKGROUND BERTUKAR ---
-    
+
     // 1. Gambar Landscape (Desktop/Tablet)
     const desktopImages = [
         "/backdrop/backdrop3.jpeg",
@@ -65,7 +73,7 @@ export default function Home() {
         "/backdrop/backdrop6.jpeg",
     ];
 
-    // 2. Gambar Portrait (Mobile - Sila tukar dengan nama file sebenar)
+    // 2. Gambar Portrait
     const mobileImages = [
         "/backdrop/mb1.jpg",
         "/backdrop/mb2.jpg",
@@ -73,17 +81,18 @@ export default function Home() {
         "/backdrop/mb4.jpg",
         "/backdrop/mb5.jpg",
         "/backdrop/mb6.jpg",
-        "/backdrop/mb7.jpg"
+        "/backdrop/mb7.jpg",
+        "/backdrop/mb8.jpg",
+        "/backdrop/mb9.jpg"
     ];
 
     const [bgIndex, setBgIndex] = useState(0);
 
-    // Logic timer ini KEKAL SAMA (tak perlu ubah)
     useEffect(() => {
         const interval = setInterval(() => {
             // Kita guna index infiniti, nanti kita guna % (modulo) untuk loop
             setBgIndex((prev) => prev + 1);
-        }, 3000); 
+        }, 3000);
 
         return () => clearInterval(interval);
     }, []);
@@ -136,6 +145,12 @@ export default function Home() {
         }
     };
 
+    // --- CONFIG MARQUEE (GAMBAR BERGERAK) ---
+    // Menggabungkan gambar sedia ada menjadi satu senarai yang panjang,
+    // dan menggandakannya supaya tiada cacat cela bila ia loop.
+    const allMarqueeImages = [...testimoniImages, ...desktopImages];
+    const marqueeImagesLoop = [...allMarqueeImages, ...allMarqueeImages];
+
     return (
         <div className="relative min-h-screen flex flex-col font-sans">
             <style>{`
@@ -147,19 +162,34 @@ export default function Home() {
     transform-origin: top center;
     animation: pendulumSwing 2s ease-in-out infinite;
   }
+  
+  /* --- KEYFRAMES BARU UNTUK GAMBAR BERGERAK --- */
+  @keyframes scrollLeft {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-10%); }
+  }
+  @keyframes scrollRight {
+    0% { transform: translateX(-10%); }
+    100% { transform: translateX(0); }
+  }
+  .animate-scroll-left {
+    animation: scrollLeft 40s linear infinite;
+  }
+  .animate-scroll-right {
+    animation: scrollRight 40s linear infinite;
+  }
 `}</style>
 
             {/* BACKGROUND - Updated: Bertukar dengan dissolve */}
             {/* BACKGROUND WRAPPER */}
             <div className="fixed inset-0 z-0 bg-black">
-                
                 {/* A. VERSION DESKTOP (Landscape) - Hidden on Mobile */}
                 <div className="hidden md:block w-full h-full absolute inset-0">
                     <AnimatePresence initial={false}>
                         <motion.img
                             key={bgIndex}
                             // Logic loop: index % jumlah gambar desktop
-                            src={desktopImages[bgIndex % desktopImages.length]} 
+                            src={desktopImages[bgIndex % desktopImages.length]}
                             alt="Background Desktop"
                             className="absolute inset-0 w-full h-full object-cover"
                             initial={{ opacity: 0, scale: 1.1 }}
@@ -167,7 +197,7 @@ export default function Home() {
                             exit={{ opacity: 0 }}
                             transition={{
                                 opacity: { duration: 1.5, ease: "easeInOut" },
-                                scale: { duration: 6, ease: "linear" }
+                                scale: { duration: 6, ease: "linear" },
                             }}
                         />
                     </AnimatePresence>
@@ -179,7 +209,7 @@ export default function Home() {
                         <motion.img
                             key={bgIndex}
                             // Logic loop: index % jumlah gambar mobile
-                            src={mobileImages[bgIndex % mobileImages.length]} 
+                            src={mobileImages[bgIndex % mobileImages.length]}
                             alt="Background Mobile"
                             className="absolute inset-0 w-full h-full object-cover"
                             initial={{ opacity: 0, scale: 1.1 }}
@@ -187,7 +217,7 @@ export default function Home() {
                             exit={{ opacity: 0 }}
                             transition={{
                                 opacity: { duration: 1.5, ease: "easeInOut" },
-                                scale: { duration: 6, ease: "linear" }
+                                scale: { duration: 6, ease: "linear" },
                             }}
                         />
                     </AnimatePresence>
@@ -274,93 +304,95 @@ export default function Home() {
           }
         `}</style>
 
+
+
                 {/* PAKEJ LIST */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full mb-12">
                     {services.length === 0
                         ? /* Loading State */
-                        [1, 2, 3].map((i) => (
-                            <div
-                                key={i}
-                                className="bg-white/10 h-40 rounded-xl animate-pulse"
-                            ></div>
-                        ))
+                          [1, 2, 3].map((i) => (
+                              <div
+                                  key={i}
+                                  className="bg-white/10 h-40 rounded-xl animate-pulse"
+                              ></div>
+                          ))
                         : /* Data Loaded */
-                        services.map((service, index) => {
-                            // Logic Kiraan Harga Asal (Display Sahaja)
-                            const originalPrice = Math.ceil(
-                                service.price / 0.9,
-                            );
+                          services.map((service, index) => {
+                              // Logic Kiraan Harga Asal (Display Sahaja)
+                              const originalPrice = Math.ceil(
+                                  service.price / 0.9,
+                              );
 
-                            return (
-                                <div
-                                    key={service.id}
-                                    className="animate-custom-fade flex flex-col justify-between bg-black/50 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-white hover:bg-black/70 transition duration-300 relative overflow-hidden shadow-xl"
-                                    style={{
-                                        animationDelay: `${index * 200}ms`,
-                                    }}
-                                >
-                                    {/* Badge Early Bird */}
-                                    <div className="absolute top-0 right-0 bg-[#412986] text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider shadow-md">
-                                        Early Bird
-                                    </div>
+                              return (
+                                  <div
+                                      key={service.id}
+                                      className="animate-custom-fade flex flex-col justify-between bg-black/50 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-white hover:bg-black/70 transition duration-300 relative overflow-hidden shadow-xl"
+                                      style={{
+                                          animationDelay: `${index * 200}ms`,
+                                      }}
+                                  >
+                                      {/* Badge Early Bird */}
+                                      <div className="absolute top-0 right-0 bg-[#412986] text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider shadow-md">
+                                          Early Bird
+                                      </div>
 
-                                    <div>
-                                        <h3 className="font-extrabold text-xl mb-2 text-gray-100 tracking-wide">
-                                            {service.name}
-                                        </h3>
+                                      <div>
+                                          <h3 className="font-extrabold text-xl mb-2 text-gray-100 tracking-wide">
+                                              {service.name}
+                                          </h3>
 
-                                        {/* --- HARGA SECTION --- */}
-                                        <div className="flex flex-col mb-4 bg-black/20 p-3 rounded-lg border border-white/5">
-                                            <div className="flex items-center gap-2 justify-center">
-                                                <span className="text-gray-400 line-through text-sm decoration-red-500/70 decoration-2">
-                                                    RM{originalPrice}
-                                                </span>
-                                                <span className="bg-[#412986] text-white text-[10px] font-bold px-1.5 rounded">
-                                                    -10% OFF
-                                                </span>
-                                            </div>
-                                            <div className="text-4xl font-black text-white drop-shadow-sm mt-1">
-                                                RM{service.price}
-                                            </div>
-                                        </div>
+                                          {/* --- HARGA SECTION --- */}
+                                          <div className="flex flex-col mb-4 bg-black/20 p-3 rounded-lg border border-white/5">
+                                              <div className="flex items-center gap-2 justify-center">
+                                                  <span className="text-gray-400 line-through text-sm decoration-red-500/70 decoration-2">
+                                                      RM{originalPrice}
+                                                  </span>
+                                                  <span className="bg-[#412986] text-white text-[10px] font-bold px-1.5 rounded">
+                                                      -10% OFF
+                                                  </span>
+                                              </div>
+                                              <div className="text-4xl font-black text-white drop-shadow-sm mt-1">
+                                                  RM{service.price}
+                                              </div>
+                                          </div>
 
-                                        <p className="text-sm text-gray-200 mb-4 leading-relaxed opacity-90">
-                                            {service.description}
-                                        </p>
+                                          <p className="text-sm text-gray-200 mb-4 leading-relaxed opacity-90">
+                                              {service.description}
+                                          </p>
 
-                                        <div className="flex justify-center mb-6">
-                                            <div className="text-xs bg-white/10 border border-white/20 inline-flex items-center gap-1 px-3 py-1 rounded-full text-gray-200 font-medium">
-                                                ⏱️ {service.duration_minutes}{" "}
-                                                Minit/Sesi
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-center mb-6">
-                                            {/* Ubah px-15 kepada px-6 supaya muat mobile, dan tambah w-full */}
-                                            <div className="text-lg bg-black/20 inline-flex items-center justify-center w-full px-6 py-5 rounded-lg text-gray-200 font-medium text-left">
-                                                <div>
-                                                    - ⁠Unlimited Shot
-                                                    <br /> - ⁠Posing Guidance
-                                                    <br /> - ⁠All edited
-                                                    photos
-                                                    <br /> - ⁠Send via cloud
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                          <div className="flex justify-center mb-6">
+                                              <div className="text-xs bg-white/10 border border-white/20 inline-flex items-center gap-1 px-3 py-1 rounded-full text-gray-200 font-medium">
+                                                  ⏱️ {service.duration_minutes}{" "}
+                                                  Minit/Sesi
+                                              </div>
+                                          </div>
+                                          <div className="flex justify-center mb-6">
+                                              {/* Ubah px-15 kepada px-6 supaya muat mobile, dan tambah w-full */}
+                                              <div className="text-lg bg-black/20 inline-flex items-center justify-center w-full px-6 py-5 rounded-lg text-gray-200 font-medium text-left">
+                                                  <div>
+                                                      - ⁠Unlimited Shot
+                                                      <br /> - ⁠Posing Guidance
+                                                      <br /> - ⁠All edited
+                                                      photos
+                                                      <br /> - ⁠Send via cloud
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      </div>
 
-                                    {/* --- BUTTON KHAS PADA SETIAP CARD --- */}
-                                    <Link
-                                        href={`/booking?package=${service.id}`}
-                                        className="w-full py-3 rounded-xl bg-[#412986] text-white font-bold hover:bg-[#301F63] hover:scale-105 transition transform shadow-lg flex items-center justify-center gap-2 group"
-                                    >
-                                        <span>TEMPAH SEKARANG</span>
-                                        <span className="group-hover:translate-x-3 transition-transform">
-                                            ➜
-                                        </span>
-                                    </Link>
-                                </div>
-                            );
-                        })}
+                                      {/* --- BUTTON KHAS PADA SETIAP CARD --- */}
+                                      <Link
+                                          href={`/booking?package=${service.id}`}
+                                          className="w-full py-3 rounded-xl bg-[#412986] text-white font-bold hover:bg-[#301F63] hover:scale-105 transition transform shadow-lg flex items-center justify-center gap-2 group"
+                                      >
+                                          <span>TEMPAH SEKARANG</span>
+                                          <span className="group-hover:translate-x-3 transition-transform">
+                                              ➜
+                                          </span>
+                                      </Link>
+                                  </div>
+                              );
+                          })}
                 </div>
 
                 {/* Promo Text - Ubah padding supaya text tak terhimpit */}
@@ -416,7 +448,7 @@ export default function Home() {
                 />
             </main>
 
-            {/* --- INTERACTIVE CENTER-MODE CAROUSEL (UPDATED: LEBIH BESAR) --- */}
+            {/* --- INTERACTIVE CENTER-MODE CAROUSEL (UPDATED: PORTRAIT) --- */}
             <section className="relative w-screen left-1/2 -translate-x-1/2 py-2 bg-black/70 border-t border-gray-800 overflow-hidden flex flex-col items-center justify-center">
                 {/* Tajuk */}
                 <div className="mb-4 text-center z-10 px-4 mt-10">
@@ -425,9 +457,51 @@ export default function Home() {
                     </h3>
                 </div>
 
-                {/* CAROUSEL CONTAINER */}
-                {/* Tinggi ditingkatkan: h-[400px] (mobile) hingga h-[600px] (desktop) */}
-                <div className="relative w-full max-w-7xl h-[300px] md:h-[600px] flex items-center justify-center perspective-1000">
+                {/* --- MARQUEE GAMBAR --- */}
+                <section className="relative w-screen left-1/2 -translate-x-1/2 py-8 bg-black/30 border-t border-white/5 overflow-hidden flex flex-col gap-4 z-10">
+                    {/* Baris Atas: Bergerak ke Kanan (Guna scroll-right) */}
+                    <div className="flex w-full overflow-hidden">
+                        <div className="flex w-max animate-scroll-right gap-4 px-2">
+                            {marqueeImagesLoop.map((src, idx) => (
+                                <div
+                                    key={`top-${idx}`}
+                                    className="w-85 h-60 md:w-120 md:h-80 flex-shrink-0 rounded-xl overflow-hidden border border-white/10 shadow-lg"
+                                >
+                                    <img
+                                        src={src}
+                                        alt={`Marquee Top ${idx}`}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Baris Bawah: Bergerak ke Kiri (Guna scroll-left) */}
+                    <div className="flex w-full overflow-hidden">
+                        {/* Reverse array untuk baris bawah supaya susunan gambar nampak rawak sedikit berbanding atas */}
+                        <div className="flex w-max animate-scroll-left gap-4 px-2">
+                            {[...marqueeImagesLoop]
+                                .reverse()
+                                .map((src, idx) => (
+                                    <div
+                                        key={`bottom-${idx}`}
+                                        className="w-85 h-60 md:w-120 md:h-80 flex-shrink-0 rounded-xl overflow-hidden border border-white/10 shadow-lg"
+                                    >
+                                        <img
+                                            src={src}
+                                            alt={`Marquee Bottom ${idx}`}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                ))}
+                        </div>
+                    </div>
+                </section>
+                {/* --- MARQUE END --- */}
+
+                {/* CAROUSEL CONTAINER (DIKEMASKINI: PORTRAIT) */}
+                <div className="relative w-full max-w-7xl h-[450px] md:h-[600px] flex items-center justify-center perspective-1000 mt-8 mb-4">
                     {[-1, 0, 1].map((offset) => {
                         const index = getIndex(imageIndex + offset);
                         const isCenter = offset === 0;
@@ -439,15 +513,14 @@ export default function Home() {
                                 custom={offset}
                                 initial={false}
                                 animate={{
-                                    scale: isCenter ? 1 : 0.85, // Gambar tepi lebih besar sikit dari sebelum ini
-                                    opacity: isCenter ? 1 : 0.4,
-                                    // Rapatkan jarak Paksi X:
-                                    // Offset 55% bermaksud gambar tepi akan duduk rapat di belakang gambar tengah
-                                    x: `${offset * 55}%`,
+                                    scale: isCenter ? 1 : 0.85, 
+                                    opacity: isCenter ? 1 : 0.6,
+                                    // Jarak ditambah ke 95% supaya tidak terlalu menindih sebab gambar kini lebih tirus
+                                    x: `${offset * 95}%`,
                                     zIndex: isCenter ? 10 : 5,
                                     filter: isCenter
                                         ? "brightness(1)"
-                                        : "brightness(0.3)", // Gelapkan lagi tepi supaya fokus tengah
+                                        : "brightness(0.3)", 
                                 }}
                                 transition={{
                                     type: "spring",
@@ -468,13 +541,12 @@ export default function Home() {
                                 onClick={() => {
                                     if (offset !== 0) paginate(offset);
                                 }}
-                                // PERUBAHAN SAIZ GAMBAR:
-                                // Mobile: w-[85%] (Hampir penuh skrin)
-                                // Desktop: w-[70%] (Sangat lebar)
-                                className={`absolute w-[85%] md:w-[70%] aspect-video rounded-2xl shadow-2xl overflow-hidden cursor-pointer border-[3px] ${isCenter ? "border-white/50" : "border-transparent"}`}
+                                // aspect-[3/4] memaksa nisbah portrait
+                                // w-[60%] & w-[30%] mengecilkan sedikit kotak untuk nampak seimbang di mobile/desktop
+                                className={`absolute w-[70%] sm:w-[45%] md:w-[30%] aspect-[5/7] rounded-2xl shadow-2xl overflow-hidden cursor-pointer border-[3px] ${isCenter ? "border-white/50" : "border-transparent"}`}
                             >
                                 <img
-                                    src={testimoniImages[index]}
+                                    src={mobileImages[index]}
                                     alt="Galeri"
                                     className="w-full h-full object-cover pointer-events-none"
                                 />
@@ -484,7 +556,7 @@ export default function Home() {
                 </div>
 
                 {/* BUTTON CONTROL */}
-                <div className="flex gap-6 mb-6 z-10">
+                <div className="flex gap-6 mb-6 z-10 mt-4">
                     <button
                         onClick={() => paginate(-1)}
                         className="p-4 rounded-full bg-black/40 hover:bg-white/20 text-white hover:cursor-pointer transition backdrop-blur-md border border-white/10"
@@ -505,7 +577,7 @@ export default function Home() {
                     </button>
                     <button
                         onClick={() => paginate(1)}
-                        className="p-4 rounded-full bg-black/40 hover:bg-white/20 text-white hover:cursor-pointer  transition backdrop-blur-md border border-white/10"
+                        className="p-4 rounded-full bg-black/40 hover:bg-white/20 text-white hover:cursor-pointer transition backdrop-blur-md border border-white/10"
                     >
                         <svg
                             className="w-6 h-6"
@@ -522,6 +594,9 @@ export default function Home() {
                         </svg>
                     </button>
                 </div>
+
+                    
+
             </section>
 
             {/* --- FOOTER --- */}
