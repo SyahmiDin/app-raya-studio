@@ -38,7 +38,7 @@ export default function Home() {
         "/backdrop/backdrop11.jpg",
         "/backdrop/backdrop12.jpg",
         "/backdrop/backdrop13.jpg",
-        "/backdrop/backdrop14.jpg"
+        "/backdrop/backdrop14.jpg",
     ];
 
     const [imageIndex, setImageIndex] = useState(0);
@@ -83,7 +83,7 @@ export default function Home() {
         "/backdrop/mb6.jpg",
         "/backdrop/mb7.jpg",
         "/backdrop/mb8.jpg",
-        "/backdrop/mb9.jpg"
+        "/backdrop/mb9.jpg",
     ];
 
     const [bgIndex, setBgIndex] = useState(0);
@@ -304,8 +304,6 @@ export default function Home() {
           }
         `}</style>
 
-
-
                 {/* PAKEJ LIST */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full mb-12">
                     {services.length === 0
@@ -513,14 +511,14 @@ export default function Home() {
                                 custom={offset}
                                 initial={false}
                                 animate={{
-                                    scale: isCenter ? 1 : 0.85, 
+                                    scale: isCenter ? 1 : 0.85,
                                     opacity: isCenter ? 1 : 0.6,
                                     // Jarak ditambah ke 95% supaya tidak terlalu menindih sebab gambar kini lebih tirus
                                     x: `${offset * 95}%`,
                                     zIndex: isCenter ? 10 : 5,
                                     filter: isCenter
                                         ? "brightness(1)"
-                                        : "brightness(0.3)", 
+                                        : "brightness(0.3)",
                                 }}
                                 transition={{
                                     type: "spring",
@@ -594,9 +592,6 @@ export default function Home() {
                         </svg>
                     </button>
                 </div>
-
-                    
-
             </section>
 
             {/* --- FOOTER --- */}
@@ -642,6 +637,65 @@ export default function Home() {
                                 <br className="md:hidden" /> 71760 Nilai, Negeri
                                 Sembilan
                             </p>
+                        </a>
+                    </div>
+
+                    {/* MEDIA SOSIAL (INSTAGRAM & TIKTOK) */}
+                    <div className="flex justify-center items-center gap-16 mb-6 text-gray-400">
+                        {/* Instagram */}
+                        <a
+                            href="https://www.instagram.com/abgstudio25?igsh=MTJxZGRoejI1eHMxcA=="
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-[#E1306C] transition-colors duration-300"
+                            aria-label="Instagram"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <rect
+                                    x="2"
+                                    y="2"
+                                    width="20"
+                                    height="20"
+                                    rx="5"
+                                    ry="5"
+                                ></rect>
+                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                <line
+                                    x1="17.5"
+                                    y1="6.5"
+                                    x2="17.51"
+                                    y2="6.5"
+                                ></line>
+                            </svg>
+                        </a>
+
+                        {/* TikTok */}
+                        <a
+                            href="https://www.tiktok.com/@abgstudio25?_r=1&_t=ZS-94BKJ97hMbC"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-white transition-colors duration-300"
+                            aria-label="TikTok"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="22"
+                                height="22"
+                                viewBox="0 0 448 512"
+                                fill="currentColor"
+                            >
+                                <path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0l88,0a121.18,121.18,0,0,0,1.86,22.17h0A122.18,122.18,0,0,0,381,102.39a121.43,121.43,0,0,0,67,20.14Z" />
+                            </svg>
                         </a>
                     </div>
 
