@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     default: "Studio ABG | Galeri Eksklusif & Tempahan Raya",
     template: "%s | Studio ABG", // Contoh page lain: "Booking | Studio ABG"
   },
-  description: "Tempah Slot Photoshoot Raya 2026 di Bandar Baru Enstek. Gambar keluarga kualiti HD, studio selesa & harga berpatutan. Pakej bermula RM50.",
+  description: "Tempah Slot Photoshoot Raya 2026 di Bandar Baru Enstek. Gambar keluarga kualiti HD, studio selesa & harga berpatutan. Pakej bermula RM110.",
   
 // --- PENGESAHAN GOOGLE SEARCH CONSOLE (BARU TAMBAH) ---
   verification: {

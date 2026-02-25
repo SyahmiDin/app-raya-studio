@@ -444,6 +444,21 @@ export default function Home() {
                         }),
                     }}
                 />
+
+                {/* PAKSA GOOGLE TUKAR NAMA 'VERCEL' KEPADA 'STUDIO ABG' */}
+                <Script
+                    id="website-schema"
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            "@context": "https://schema.org",
+                            "@type": "WebSite",
+                            name: "Studio ABG",
+                            alternateName: "Studio ABG Raya",
+                            url: "https://studioabg.vercel.app/",
+                        }),
+                    }}
+                />
             </main>
 
             {/* --- INTERACTIVE CENTER-MODE CAROUSEL (UPDATED: PORTRAIT) --- */}
