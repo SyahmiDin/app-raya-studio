@@ -251,6 +251,21 @@ function BookingContent() {
       });
     }
 
+    // --- TIKTOK PIXEL: Hantar event InitiateCheckout (KOD BARU) ---
+    if (typeof window !== "undefined" && window.ttq) {
+      window.ttq.track('InitiateCheckout', {
+        contents: [
+          {
+            content_name: selectedService.name,
+            price: selectedService.price,
+            quantity: 1
+          }
+        ],
+        value: selectedService.price,
+        currency: 'MYR'
+      });
+    }
+
     let finalReferralCode = "";
     if (promoStatus === "valid") {
       finalReferralCode = formData.referral.toUpperCase();

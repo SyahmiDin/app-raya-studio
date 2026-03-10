@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import PromoListener from "./components/PromoListener";
 import MetaPixel from "./components/MetaPixel";
+import TikTokPixel from "./components/TikTokPixel";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -105,6 +106,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {/* 2. PASANG CCTV DI SINI (Promo Listener) */}
+        <TikTokPixel />
         <MetaPixel />
         <PromoListener />
         {children}
