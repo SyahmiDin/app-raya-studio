@@ -242,6 +242,15 @@ function BookingContent() {
       return;
     }
 
+    // --- META PIXEL: Hantar event InitiateCheckout ---
+    if (typeof window !== "undefined" && window.fbq) {
+      window.fbq('track', 'InitiateCheckout', {
+        content_name: selectedService.name,
+        value: selectedService.price,
+        currency: 'MYR'
+      });
+    }
+
     let finalReferralCode = "";
     if (promoStatus === "valid") {
       finalReferralCode = formData.referral.toUpperCase();
