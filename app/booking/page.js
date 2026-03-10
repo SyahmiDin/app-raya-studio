@@ -9,6 +9,16 @@ const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
 );
 
+// --- FUNGSI KHAS UNTUK TIKTOK: Hash SHA-256 Client-Side ---
+async function hashSHA256(string) {
+  if (!string) return "";
+  const utf8 = new TextEncoder().encode(string.toLowerCase().trim());
+  const hashBuffer = await crypto.subtle.digest("SHA-256", utf8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map((bytes) => bytes.toString(16).padStart(2, "0")).join("");
+  return hashHex;
+}
+
 function BookingContent() {
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
@@ -242,29 +252,47 @@ function BookingContent() {
       return;
     }
 
+    if (!formData.pax || formData.pax < 1) {
+      alert("Sila masukkan bilangan pax (jumlah orang).");
+      return;
+    }
+
     // --- META PIXEL: Hantar event InitiateCheckout ---
     if (typeof window !== "undefined" && window.fbq) {
-      window.fbq('track', 'InitiateCheckout', {
+      window.fbq("track", "InitiateCheckout", {
         content_name: selectedService.name,
         value: selectedService.price,
-        currency: 'MYR'
+        currency: "MYR",
       });
     }
 
-    // --- TIKTOK PIXEL: Hantar event InitiateCheckout (KOD BARU) ---
+    // --- TIKTOK PIXEL: PII Hashing & Tracking ---
     if (typeof window !== "undefined" && window.ttq) {
-      window.ttq.track('InitiateCheckout', {
+      // 1. Hash PII (Email & Phone)
+      const hashedEmail = await hashSHA256(formData.email);
+      const hashedPhone = await hashSHA256(formData.phone);
+
+      // 2. Identify Pelanggan
+      window.ttq.identify({
+        email: hashedEmail,
+        phone_number: hashedPhone,
+      });
+
+      // 3. Track Butang Bayar Ditekan (InitiateCheckout / ClickButton)
+      window.ttq.track("InitiateCheckout", {
         contents: [
           {
+            content_id: selectedService.id.toString(),
+            content_type: "product",
             content_name: selectedService.name,
             price: selectedService.price,
-            quantity: 1
-          }
+          },
         ],
         value: selectedService.price,
-        currency: 'MYR'
+        currency: "MYR",
       });
     }
+    // -------------------------------------------------------------
 
     let finalReferralCode = "";
     if (promoStatus === "valid") {
@@ -381,6 +409,23 @@ function BookingContent() {
                         setSelectedService(service);
                         setSelectedSlot(null);
                         setFormData((prev) => ({ ...prev, pax: "" }));
+
+                        // --- TIKTOK PIXEL: Track ViewContent bila user tekan pakej ---
+                        if (typeof window !== "undefined" && window.ttq) {
+                          window.ttq.track("ViewContent", {
+                            contents: [
+                              {
+                                content_id: service.id.toString(),
+                                content_type: "product",
+                                content_name: service.name,
+                                price: service.price,
+                              },
+                            ],
+                            value: service.price,
+                            currency: "MYR",
+                          });
+                        }
+                        // -------------------------------------------------------------
                       }
                     }}
                     className={`
@@ -531,17 +576,17 @@ function BookingContent() {
                                       disabled={isDisabled}
                                       onClick={() => setSelectedSlot(slot.time)}
                                       className={`
-                                                                py-3 px-2 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center relative
-                                                                ${
-                                                                  isPending
-                                                                    ? "border-orange-200 bg-orange-50 text-orange-400 cursor-not-allowed opacity-80"
-                                                                    : isDisabled
-                                                                      ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed decoration-slice"
-                                                                      : isSelected
-                                                                        ? "border-[#412986] bg-[#412986] text-white shadow-lg shadow-purple-900/30 scale-105 ring-2 ring-[#D4AF37] ring-offset-2"
-                                                                        : "border-[#412986]/20 bg-white text-[#412986] hover:bg-purple-50 hover:border-[#412986]"
-                                                                }
-                                                            `}
+                                                        py-3 px-2 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center relative
+                                                        ${
+                                                          isPending
+                                                            ? "border-orange-200 bg-orange-50 text-orange-400 cursor-not-allowed opacity-80"
+                                                            : isDisabled
+                                                              ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed decoration-slice"
+                                                              : isSelected
+                                                                ? "border-[#412986] bg-[#412986] text-white shadow-lg shadow-purple-900/30 scale-105 ring-2 ring-[#D4AF37] ring-offset-2"
+                                                                : "border-[#412986]/20 bg-white text-[#412986] hover:bg-purple-50 hover:border-[#412986]"
+                                                        }
+                                                    `}
                                     >
                                       <span
                                         className={`text-sm font-bold ${isDisabled ? "" : "font-mono"}`}
@@ -620,7 +665,6 @@ function BookingContent() {
                       <button
                         type="button"
                         disabled={promoStatus === "checking"}
-                        /* PERUBAHAN 2: Tambah 'w-full sm:w-auto' dan 'py-3 sm:py-0' supaya button penuh di mobile */
                         className="bg-[#1e293b] text-white font-bold px-6 py-3 sm:py-0 rounded-lg hover:bg-black hover:cursor-pointer transition-colors disabled:opacity-50 min-w-[100px] w-full sm:w-auto"
                         onClick={checkReferralCode}
                       >
@@ -824,11 +868,11 @@ function BookingContent() {
                   onClick={handlePayment}
                   // Tambah !isAgreed dalam disabled condition
                   disabled={
-                    loading || !formData.name || !formData.phone || !isAgreed
+                    loading || !formData.name || !formData.phone || !isAgreed || !formData.pax
                   }
                   className={`mt-4 w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-2
                             ${
-                              loading || !isAgreed
+                              loading || !isAgreed || !formData.pax
                                 ? "bg-gray-400 cursor-not-allowed text-white"
                                 : "bg-[#412986] text-white hover:bg-[#301F63] hover:-translate-y-1"
                             }
@@ -1041,7 +1085,7 @@ function BookingContent() {
                     <strong>Tujuan Promosi:</strong> Pihak studio tidak akan
                     memuat naik atau menggunakan gambar anda di media sosial
                     (Instagram/TikTok/Facebook) untuk tujuan promosi tanpa
-                    kebenaran anda terlebih dahulu.
+                    kbenaran anda terlebih dahulu.
                   </li>
                   <li>
                     <strong>Keizinan:</strong> Jika anda tidak membenarkan
