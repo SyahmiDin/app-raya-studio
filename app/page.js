@@ -722,7 +722,7 @@ export default function Home() {
 
             {/* --- FLOATING WHATSAPP BUTTON --- */}
             <a
-                href="https://wa.me/60129585260?text=Hai%20En.%20Luqman,%20saya%20nak%20tanya%20berkenaan%20pakej%20Studio%20Raya"
+                href="https://wa.me/60129585260?text=Hai!%20saya%20nak%20tanya%20berkenaan%20pakej%20Studio%20Raya%20ABG"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="fixed bottom-6 right-6 z-40 bg-[#25D366] text-white p-3 md:p-4 rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.5)] hover:scale-110 transition-transform duration-300 flex items-center justify-center group"
