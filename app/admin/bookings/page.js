@@ -191,6 +191,9 @@ export default function AdminBookingsPage() {
                                             <div className="text-xs text-gray-500 mt-1.5 font-mono font-medium">
                                                 Paid: RM{book.final_price || '-'}
                                             </div>
+                                            <div className="text-xs text-gray-500 mt-1.5 font-mono font-medium">
+                                                Pax: {book.pax || '-'}
+                                            </div>
                                         </div>
                                     ) : (
                                         <span className="text-red-600 text-xs font-bold bg-red-50 px-2 py-1 rounded-md">Deleted Service</span>
