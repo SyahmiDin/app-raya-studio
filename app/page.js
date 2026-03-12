@@ -739,8 +739,8 @@ export default function Home() {
                 </svg>
 
                 {/* Tooltip Hover */}
-                <span className="absolute left-16 bg-white text-gray-800 px-3 py-1.5 rounded-lg text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-md whitespace-nowrap pointer-events-none">
-                    Tanya En. Luqman
+                <span className="absolute right-16 bg-white text-gray-800 px-3 py-1.5 rounded-lg text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-md whitespace-nowrap pointer-events-none">
+                    Hubungi Kami di WhatsApp!
                 </span>
             </a>
 
