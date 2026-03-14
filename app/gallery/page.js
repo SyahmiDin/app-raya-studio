@@ -244,7 +244,7 @@ function GalleryContent() {
 
       {/* --- BAHAGIAN GALERI (GRID) --- */}
       {/* Kita letak 'ref' kat sini supaya butang atas tadi boleh scroll ke sini */}
-      <div ref={gallerySectionRef} className="py-20 px-4 md:px-2 bg-white min-h-screen">
+      <div ref={gallerySectionRef} className="py-20 px-1 md:px-2 bg-white min-h-screen">
 
         {/* Header Kecil & Butang Download All */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-10 max-w-7xl mx-auto border-b pb-6">
