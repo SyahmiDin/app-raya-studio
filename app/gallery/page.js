@@ -3,8 +3,9 @@ import GalleryClient from "./GalleryClient";
 
 // FUNGSI INI AKAN MENJADI OTAK KEPADA PREVIEW WHATSAPP (DYNAMIC SEO)
 export async function generateMetadata({ searchParams }) {
-  // 1. Ambil nama client dari URL (cth: Anis-Ibrahim)
-  const clientName = searchParams?.client || "Pelanggan";
+  // 1. Tunggu parameter (Wajib untuk Next.js versi baru)
+  const params = await searchParams;
+  const clientName = params?.client || "Pelanggan";
   const formattedName = clientName.replace(/-/g, " ").toUpperCase();
 
   // 2. Setting base URL
@@ -36,7 +37,7 @@ export async function generateMetadata({ searchParams }) {
     description: `Klik untuk muat turun gambar kenangan raya keluarga ${formattedName}. Sila simpan menggunakan PIN yang diberikan.`,
     openGraph: {
       title: `Galeri Raya: ${formattedName}`,
-      description: `Gambar photoshoot keluarga anda sudah sedia untuk dimuat turun. Klik pautan ini sekarang.`,
+      description: `Gambar photoshoot keluarga anda sudah sedia untuk dimuat turun.`,
       images: [
         {
           url: coverUrl, // <--- Ini yang WhatsApp akan tunjuk!
@@ -46,13 +47,17 @@ export async function generateMetadata({ searchParams }) {
         },
       ],
     },
+    // Tambahan: Kekadang app guna Twitter card kalau OG fail
+    twitter: {
+      card: 'summary_large_image',
+      images: [coverUrl],
+    }
   };
 }
 
 export default function GalleryPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[#412986] animate-pulse font-bold">Menyediakan Galeri...</div>}>
-      {/* Panggil fail GalleryClient yang kita buat di Langkah 1 tadi */}
       <GalleryClient />
     </Suspense>
   );
