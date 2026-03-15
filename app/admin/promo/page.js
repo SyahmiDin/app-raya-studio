@@ -1,11 +1,17 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function AdminPromoPage() {
   const [codes, setCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newCode, setNewCode] = useState({ code: "", percent: 10, staff: "" });
+  
+  // --- 1. STATE UNTUK TOTAL SALES, COMMISSION & CLIENTS KESELURUHAN ---
+  const [grandTotalSales, setGrandTotalSales] = useState(0);
+  const [grandTotalCommission, setGrandTotalCommission] = useState(0);
+  const [grandTotalClients, setGrandTotalClients] = useState(0); 
+  const totalSalesRef = useRef(null); 
 
   useEffect(() => { fetchReport(); }, []);
 
@@ -13,19 +19,40 @@ export default function AdminPromoPage() {
     setLoading(true);
 
     const { data: promoCodes } = await supabase.from('referral_codes').select('*');
-    const { data: bookings } = await supabase.from('bookings').select('referral_code, final_price').eq('status', 'paid').not('referral_code', 'is', null);
+    
+    // UBAHAN 1: Tambah 'client_name' dalam select supaya kita boleh kesan slot block
+    const { data: bookings } = await supabase.from('bookings').select('client_name, referral_code, final_price').eq('status', 'paid');
+
+    // UBAHAN 2: Tapis (Filter) buang senarai yang bernama "ADMIN BLOCK"
+    const validBookings = (bookings || []).filter(b => !b.client_name?.toUpperCase().includes('ADMIN BLOCK'));
+
+    // UBAHAN 3: Kira Total Pelanggan & Total Jualan hanya dari validBookings (Pelanggan Sebenar)
+    const totalSemuaDeals = validBookings.length;
+    const totalSemuaSales = validBookings.reduce((sum, b) => sum + (b.final_price || 0), 0);
+    
+    let tempGrandCommission = 0;
 
     const report = (promoCodes || []).map(promo => {
-        const sales = (bookings || []).filter(b => b.referral_code === promo.code);
+        // Cari jualan untuk staf ini sahaja dari validBookings
+        const sales = validBookings.filter(b => b.referral_code === promo.code);
         const totalSales = sales.reduce((sum, b) => sum + (b.final_price || 0), 0);
         
-        // KIRA KOMISEN: Total Jualan x (Percent / 100)
+        // Kira Komisen Staf
         const commission = totalSales * (promo.discount_percent / 100);
+
+        // Tambah komisen ke jumlah keseluruhan komisen dibayar
+        tempGrandCommission += commission;
 
         return { ...promo, usage_count: sales.length, total_sales: totalSales, total_commission: commission };
     });
 
-    setCodes(report); setLoading(false);
+    // Set State dengan data yang tepat
+    setGrandTotalClients(totalSemuaDeals);
+    setGrandTotalSales(totalSemuaSales);
+    setGrandTotalCommission(tempGrandCommission);
+    
+    setCodes(report); 
+    setLoading(false);
   }
 
   async function handleCreate(e) {
@@ -41,6 +68,11 @@ export default function AdminPromoPage() {
     fetchReport();
   }
 
+  // --- 2. FUNGSI UNTUK SCROLL KE BAWAH ---
+  const scrollToTotal = () => {
+    totalSalesRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
       
@@ -51,9 +83,19 @@ export default function AdminPromoPage() {
                 <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Komisen Staff 💰</h1>
                 <p className="text-indigo-200 mt-1 text-sm md:text-base">Pantau prestasi jualan dan insentif pasukan anda.</p>
             </div>
-            <a href="/admin" className="group flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-full backdrop-blur-sm transition-all text-sm font-medium border border-white/20">
-                <span>← Kembali ke Dashboard</span>
-            </a>
+            
+            {/* --- 3. BUTANG UNTUK SCROLL KE TOTAL SALES --- */}
+            <div className="flex gap-2 w-full md:w-auto">
+                <button 
+                  onClick={scrollToTotal}
+                  className="flex-1 md:flex-none flex justify-center items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-[#412986] px-5 py-2.5 rounded-full transition-all text-sm font-bold shadow-md"
+                >
+                  <span>📊 Total Keseluruhan</span>
+                </button>
+                <a href="/admin" className="flex-1 md:flex-none group flex justify-center items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-full backdrop-blur-sm transition-all text-sm font-medium border border-white/20">
+                    <span>← Kembali</span>
+                </a>
+            </div>
         </div>
       </div>
 
@@ -120,7 +162,7 @@ export default function AdminPromoPage() {
 
             {/* --- REPORT TABLE SECTION (RIGHT / BOTTOM) --- */}
             <div className="lg:col-span-8">
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col h-full overflow-hidden">
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col overflow-hidden mb-6">
                     <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
                         <h2 className="font-bold text-lg text-gray-800">Senarai Prestasi</h2>
                         <span className="text-xs font-medium bg-indigo-50 text-[#412986] px-3 py-1 rounded-full">{codes.length} Staff Aktif</span>
@@ -158,7 +200,7 @@ export default function AdminPromoPage() {
                                                         </div>
                                                     </div>
 
-                                                    {/* --- LINK GENERATOR (ORIGINAL STYLE) --- */}
+                                                    {/* --- LINK GENERATOR --- */}
                                                     <div className="mt-2 text-xs bg-gray-100 p-2 rounded border border-gray-200 flex items-center justify-between gap-2 max-w-[250px]">
                                                         <span className="truncate text-gray-500">.../booking?ref={item.code}</span>
                                                         <button 
@@ -172,7 +214,6 @@ export default function AdminPromoPage() {
                                                             Copy
                                                         </button>
                                                     </div>
-                                                    {/* -------------------------------------- */}
                                                 </div>
                                             </td>
                                             
@@ -210,6 +251,42 @@ export default function AdminPromoPage() {
                         </table>
                     </div>
                 </div>
+
+                {/* --- 4. RINGKASAN KESELURUHAN (TOTAL) DI SINI --- */}
+                {!loading && codes.length > 0 && (
+                    <div ref={totalSalesRef} className="bg-white rounded-2xl shadow-lg border border-[#412986]/20 p-6 flex flex-col lg:flex-row justify-between items-center gap-6 animate-fade-in-up">
+                        
+                        {/* A. Total Pelanggan */}
+                        <div className="text-center lg:text-left flex-1">
+                            <h3 className="text-blue-500 font-bold uppercase tracking-wider text-xs mb-1">Jumlah Pelanggan</h3>
+                            <div className="text-3xl font-black text-blue-600">
+                                {grandTotalClients} <span className="text-sm font-bold text-gray-400">Pelanggan</span>
+                            </div>
+                        </div>
+
+                        <div className="h-10 w-px bg-gray-200 hidden lg:block"></div>
+
+                        {/* B. Total Jualan */}
+                        <div className="text-center lg:text-left flex-1">
+                            <h3 className="text-gray-500 font-bold uppercase tracking-wider text-xs mb-1">Keseluruhan Jualan</h3>
+                            <div className="text-3xl font-black text-[#412986]">
+                                RM{grandTotalSales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            </div>
+                        </div>
+                        
+                        <div className="h-10 w-px bg-gray-200 hidden lg:block"></div>
+                        
+                        {/* C. Total Komisen */}
+                        <div className="text-center lg:text-right bg-emerald-50 px-6 py-4 rounded-xl border border-emerald-100 flex-1 w-full lg:w-auto">
+                            <h3 className="text-emerald-600 font-bold uppercase tracking-wider text-xs mb-1">Komisen Staff</h3>
+                            <div className="text-2xl font-black text-emerald-600">
+                                RM{grandTotalCommission.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {/* ------------------------------------------------ */}
+
             </div>
 
         </div>
