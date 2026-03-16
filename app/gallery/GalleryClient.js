@@ -356,41 +356,115 @@ function GalleryContent() {
 
       {/* --- FOOTER --- */}
       <footer className="bg-gray-900 z-40 text-white py-10 text-center border-t border-gray-800">
-        <div className="container mx-auto px-4">
+                <div className="container mx-auto px-4">
+                    {/* TAJUK */}
+                    <h3 className="font-black text-xl md:text-2xl mb-4 tracking-widest text-white">
+                        STUDIO ABG 2026
+                    </h3>
 
-          {/* TAJUK */}
-          <h3 className="font-black text-xl md:text-2xl mb-4 tracking-widest text-white">
-            STUDIO ABG 2026
-          </h3>
+                    {/* ALAMAT (BOLEH KLIK) */}
+                    <div className="flex justify-center mb-6">
+                        <a
+                            href="https://www.google.com/maps/search/?api=1&query=60-2,+Jalan+Timur+6/2D,+Bandar+Baru+Enstek,+71760+Nilai,+Negeri+Sembilan"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex flex-col md:flex-row items-center gap-2 text-gray-400 hover:text-[#a78bfa] transition-colors duration-300"
+                        >
+                            {/* Icon Location */}
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5 group-hover:animate-bounce"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                />
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                            </svg>
 
-          {/* ALAMAT (BOLEH KLIK) */}
-          <div className="flex justify-center mb-6">
-            <a
-              href="https://www.google.com/maps/search/?api=1&query=60-2,+Jalan+Timur+6/2D,+Bandar+Baru+Enstek,+71760+Nilai,+Negeri+Sembilan"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col md:flex-row items-center gap-2 text-gray-400 hover:text-[#a78bfa] transition-colors duration-300"
-            >
-              {/* Icon Location */}
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+                            {/* Teks Alamat */}
+                            <p className="text-sm md:text-base leading-relaxed max-w-xs md:max-w-none">
+                                60-2, Jalan Timur 6/2D, Bandar Baru Enstek,
+                                <br className="md:hidden" /> 71760 Nilai, Negeri
+                                Sembilan
+                            </p>
+                        </a>
+                    </div>
 
-              {/* Teks Alamat */}
-              <p className="text-sm md:text-base leading-relaxed max-w-xs md:max-w-none">
-                60-2, Jalan Timur 6/2D, Bandar Baru Enstek,<br className="md:hidden" /> 71760 Nilai, Negeri Sembilan
-              </p>
-            </a>
-          </div>
+                    {/* MEDIA SOSIAL (INSTAGRAM & TIKTOK) */}
+                    <div className="flex justify-center items-center gap-16 mb-6 text-gray-400">
+                        {/* Instagram */}
+                        <a
+                            href="https://www.instagram.com/abgstudio25?igsh=MTJxZGRoejI1eHMxcA=="
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-[#E1306C] transition-colors duration-300"
+                            aria-label="Instagram"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <rect
+                                    x="2"
+                                    y="2"
+                                    width="20"
+                                    height="20"
+                                    rx="5"
+                                    ry="5"
+                                ></rect>
+                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                <line
+                                    x1="17.5"
+                                    y1="6.5"
+                                    x2="17.51"
+                                    y2="6.5"
+                                ></line>
+                            </svg>
+                        </a>
 
-          {/* COPYRIGHT */}
-          <p className="text-gray-600 text-xs tracking-wider">
-            Hak Cipta Terpelihara © 2026 Al Bayan Global.
-          </p>
+                        {/* TikTok */}
+                        <a
+                            href="https://www.tiktok.com/@abgstudio25?_r=1&_t=ZS-94BKJ97hMbC"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-white transition-colors duration-300"
+                            aria-label="TikTok"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="22"
+                                height="22"
+                                viewBox="0 0 448 512"
+                                fill="currentColor"
+                            >
+                                <path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0l88,0a121.18,121.18,0,0,0,1.86,22.17h0A122.18,122.18,0,0,0,381,102.39a121.43,121.43,0,0,0,67,20.14Z" />
+                            </svg>
+                        </a>
+                    </div>
 
-        </div>
-      </footer>
+                    {/* COPYRIGHT */}
+                    <p className="text-gray-600 text-xs tracking-wider">
+                        Hak Cipta Terpelihara © 2026 Al Bayan Global.
+                    </p>
+                </div>
+            </footer>
     </div>
   );
 }
