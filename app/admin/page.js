@@ -212,6 +212,13 @@ export default function AdminPage() {
                  >
                     Referral Kod
                  </Link>
+                 <Link 
+                    href="/admin/sales" 
+                    className="text-white px-5 py-2.5 rounded-full font-semibold shadow hover:opacity-90 transition flex items-center justify-center gap-2 w-full md:w-auto text-sm md:text-base"
+                    style={{ backgroundColor: GOLD_COLOR }}
+                 >
+                    Sales
+                 </Link>
             </div>
         </div>
 
