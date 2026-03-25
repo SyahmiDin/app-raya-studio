@@ -1,4 +1,4 @@
-// app/gallery/page.js
+// app/gallery/GalleryClient.js
 "use client";
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
@@ -265,11 +265,25 @@ function GalleryContent() {
 
         {/* Grid Gambar */}
         <div className="columns-2 md:columns-3 lg:columns-5 gap-1 w-full mx-auto">
-            {/* UBAH: Tambah index dalam map, dan setSelectedIndex bila klik */}
             {photos.map((photo, index) => (
-            <div key={photo.key} className="relative group break-inside-avoid mb-1 cursor-pointer rounded-lg overflow-hidden"
-                onClick={() => setSelectedIndex(index)}>
-                <img src={photo.url} className="w-full h-auto" loading="lazy" />
+            <div 
+                key={photo.key} 
+                // 1. Tambah bg-gray-200 dan animate-pulse sebagai kotak 'Loading' sementara
+                className="relative group break-inside-avoid mb-1 cursor-pointer rounded-lg overflow-hidden bg-gray-200 animate-pulse"
+                onClick={() => setSelectedIndex(index)}
+            >
+                <img 
+                    src={photo.url} 
+                    loading="lazy" 
+                    // 2. Gambar mula-mula disorokkan (opacity-0) dengan efek transisi (duration-700)
+                    className="w-full h-auto opacity-0 transition-opacity duration-700 ease-in-out" 
+                    
+                    // 3. Bila gambar siap download, kita buang class invisible tu supaya ia fade-in
+                    onLoad={(e) => {
+                        e.target.classList.remove('opacity-0');
+                        e.target.parentElement.classList.remove('animate-pulse'); // Hentikan degupan kelabu
+                    }}
+                />
                 <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-opacity"></div>
             </div>
             ))}
