@@ -471,9 +471,9 @@ function BookingContent() {
                       <div className="mt-auto pt-4 border-t border-dashed border-gray-200">
                         <div className="flex justify-between items-end">
                           <div>
-                            <p className="text-xs text-gray-400 line-through italic">
+                            {/* <p className="text-xs text-gray-400 line-through italic">
                               RM{originalPrice}
-                            </p>
+                            </p> */}
                             <p className="text-2xl font-extrabold text-[#412986]">
                               RM{service.price}
                             </p>

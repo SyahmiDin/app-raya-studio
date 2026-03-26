@@ -317,7 +317,7 @@ export default function Home() {
                           services.map((service, index) => {
                               // Logic Kiraan Harga Asal (Display Sahaja)
                               const originalPrice = Math.ceil(
-                                  service.price / 0.9,
+                                  service.price,
                               );
 
                               return (
@@ -341,12 +341,12 @@ export default function Home() {
                                           {/* --- HARGA SECTION --- */}
                                           <div className="flex flex-col mb-4 bg-black/20 p-3 rounded-lg border border-white/5">
                                               <div className="flex items-center gap-2 justify-center">
-                                                  <span className="text-gray-400 line-through text-sm decoration-red-500/70 decoration-2">
+                                                  {/* <span className="text-gray-400 line-through text-sm decoration-red-500/70 decoration-2">
                                                       RM{originalPrice}
-                                                  </span>
-                                                  <span className="bg-[#412986] text-white text-[10px] font-bold px-1.5 rounded">
+                                                  </span> */}
+                                                  {/* <span className="bg-[#412986] text-white text-[10px] font-bold px-1.5 rounded">
                                                       -10% OFF
-                                                  </span>
+                                                  </span> */}
                                               </div>
                                               <div className="text-4xl font-black text-white drop-shadow-sm mt-1">
                                                   RM{service.price}
@@ -393,11 +393,11 @@ export default function Home() {
                 </div>
 
                 {/* Promo Text - Ubah padding supaya text tak terhimpit */}
-                <div className="max-w-6xl w-full bg-black/50 py-4 px-4 md:px-12 rounded-xl mb-4 animate-fade-in-up delay-100 border border-white/10">
+                {/* <div className="max-w-6xl w-full bg-black/50 py-4 px-4 md:px-12 rounded-xl mb-4 animate-fade-in-up delay-100 border border-white/10">
                     <p className="text-white text-base md:text-xl drop-shadow-md italic animate-pulse">
                         Harga promosi ini sah untuk tempahan dibuat pada bulan Ramadan
                     </p>
-                </div>
+                </div> */}
 
                 {/* GOOGLE MAPS / LOCAL SEO */}
                 <Script
