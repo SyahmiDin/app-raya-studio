@@ -18,7 +18,6 @@ export default function SalesReportPage() {
     // --- STATE UNTUK SENARAI PELANGGAN & RANKING STAFF ---
     const [clientList, setClientList] = useState([]);
     const [staffRanking, setStaffRanking] = useState([]);
-    const [picRanking, setPicRanking] = useState([]);
 
     const [profitBreakdown, setProfitBreakdown] = useState({
         stripeFees: 0,

@@ -150,42 +150,69 @@ function GalleryContent() {
     }
   }
 
-  // --- (DIRECT BULK DOWNLOAD + ANTI-CACHE) ---
+  // --- (DIRECT BULK DOWNLOAD + AUTO-SPLIT JIKA TERLALU BANYAK) ---
   async function handleBulkDownload(bypassCheck = false) {
     if (!bypassCheck && !isPinVerified) return requestBulkDownload();
     if (photos.length === 0) return;
 
     setIsZipping(true);
     setZipProgress(0);
-    const zip = new JSZip();
+
+    // Tetapkan had maksimum gambar untuk 1 fail ZIP (Cadangan: 100 gambar per ZIP supaya browser tak crash)
+    const MAX_PER_ZIP = 100;
+    const totalChunks = Math.ceil(photos.length / MAX_PER_ZIP);
 
     try {
-      for (let i = 0; i < photos.length; i++) {
-        const photo = photos[i];
-        const filename = photo.key.split("/").pop();
+      // Loop untuk setiap pecahan (Part 1, Part 2...)
+      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        
+        const zip = new JSZip(); // Buat ZIP baru untuk setiap Part
+        const start = chunkIndex * MAX_PER_ZIP;
+        const end = Math.min(start + MAX_PER_ZIP, photos.length);
+        const chunkPhotos = photos.slice(start, end);
 
-        // 1. Fetch Direct dari Cloudflare
-        // PENTING: Tambah cache: 'no-store' supaya browser tak guna cache lama yang error CORS
-        const response = await fetch(photo.url, {
-          mode: 'cors',
-          cache: 'no-store'
-        });
+        // Beritahu pengguna Part mana yang sedang diproses jika gambar banyak
+        if (totalChunks > 1) {
+            console.log(`Processing Part ${chunkIndex + 1} of ${totalChunks}`);
+        }
 
-        if (!response.ok) throw new Error("Network error");
+        // Masukkan gambar ke dalam ZIP untuk pecahan ini
+        for (let i = 0; i < chunkPhotos.length; i++) {
+          const photo = chunkPhotos[i];
+          const filename = photo.key.split("/").pop();
 
-        const blob = await response.blob();
-        zip.file(filename, blob);
+          // Fetch direct dari Cloudflare tanpa simpan dalam cache
+          const response = await fetch(photo.url, {
+            mode: 'cors',
+            cache: 'no-store'
+          });
 
-        setZipProgress(Math.round(((i + 1) / photos.length) * 100));
+          if (!response.ok) throw new Error("Network error");
+
+          const blob = await response.blob();
+          zip.file(filename, blob);
+
+          // Update peratusan mengikut total keseluruhan gambar
+          const totalProcessedSoFar = start + i + 1;
+          setZipProgress(Math.round((totalProcessedSoFar / photos.length) * 100));
+        }
+
+        // Generate dan download ZIP untuk pecahan ini
+        const content = await zip.generateAsync({ type: "blob" });
+        
+        // Namakan fail ZIP. Jika lebih dari 1 part, tambah "Part-1", "Part-2"
+        const zipName = totalChunks > 1 
+            ? `${clientFolder}-StudioRaya-Part${chunkIndex + 1}.zip` 
+            : `${clientFolder}-StudioRaya.zip`;
+            
+        saveAs(content, zipName);
       }
-
-      const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, `${clientFolder}-StudioRaya.zip`);
 
     } catch (error) {
       console.error(error);
-      alert("Gagal memproses Zip. Sila semak setting CORS Cloudflare.");
+      alert("Proses terhenti. Sila pastikan capaian internet stabil atau cuba download satu-persatu.");
     }
+    
     setIsZipping(false);
   }
 
