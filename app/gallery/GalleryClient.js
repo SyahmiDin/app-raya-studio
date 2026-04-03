@@ -159,7 +159,7 @@ function GalleryContent() {
     setZipProgress(0);
 
     // 1. TUKAR KE 15 SAHAJA: Supaya iPhone tak lemas memori
-    const MAX_PER_ZIP = 70;
+    const MAX_PER_ZIP = 50;
     const totalChunks = Math.ceil(photos.length / MAX_PER_ZIP);
 
     try {
@@ -202,7 +202,7 @@ function GalleryContent() {
             
         saveAs(content, zipName);
 
-        // 2. KOSONGKAN MEMORI: Sangat penting untuk iPhone
+        // 2. KOSONGKAN MEMORI
         zip = null; 
 
         // 3. MASA REHAT: Beri masa Safari cuci RAM (Garbage Collection) sebelum sambung
