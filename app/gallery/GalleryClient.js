@@ -159,7 +159,7 @@ function GalleryContent() {
     setZipProgress(0);
 
     // 1. TUKAR KE 15 SAHAJA: Supaya iPhone tak lemas memori
-    const MAX_PER_ZIP = 50;
+    const MAX_PER_ZIP = 10;
     const totalChunks = Math.ceil(photos.length / MAX_PER_ZIP);
 
     try {
