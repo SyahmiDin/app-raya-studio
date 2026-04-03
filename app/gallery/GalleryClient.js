@@ -206,6 +206,14 @@ function GalleryContent() {
             : `${clientFolder}-ABGStudioRaya.zip`;
             
         saveAs(content, zipName);
+
+        zip = null; 
+
+        // 3. MASA REHAT: Beri masa Safari cuci RAM (Garbage Collection) sebelum sambung
+        if (chunkIndex < totalChunks - 1) {
+            await new Promise(resolve => setTimeout(resolve, 4000)); // Rehat 4 saat
+        } 
+
       }
 
     } catch (error) {
