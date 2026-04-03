@@ -158,30 +158,27 @@ function GalleryContent() {
     setIsZipping(true);
     setZipProgress(0);
 
-    // Tetapkan had maksimum gambar untuk 1 fail ZIP
+    // 1. TUKAR KE 15 SAHAJA: Supaya iPhone tak lemas memori
     const MAX_PER_ZIP = 70;
     const totalChunks = Math.ceil(photos.length / MAX_PER_ZIP);
 
     try {
-      // Loop untuk setiap pecahan (Part 1, Part 2...)
       for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
         
-        const zip = new JSZip(); // Buat ZIP baru untuk setiap Part
+        let zip = new JSZip(); 
         const start = chunkIndex * MAX_PER_ZIP;
         const end = Math.min(start + MAX_PER_ZIP, photos.length);
         const chunkPhotos = photos.slice(start, end);
 
-        // Beritahu pengguna Part mana yang sedang diproses jika gambar banyak
         if (totalChunks > 1) {
             console.log(`Processing Part ${chunkIndex + 1} of ${totalChunks}`);
         }
 
-        // Masukkan gambar ke dalam ZIP untuk pecahan ini
+        // Masukkan gambar ke dalam ZIP
         for (let i = 0; i < chunkPhotos.length; i++) {
           const photo = chunkPhotos[i];
           const filename = photo.key.split("/").pop();
 
-          // Fetch direct dari Cloudflare tanpa simpan dalam cache
           const response = await fetch(photo.url, {
             mode: 'cors',
             cache: 'no-store'
@@ -192,28 +189,26 @@ function GalleryContent() {
           const blob = await response.blob();
           zip.file(filename, blob);
 
-          // Update peratusan mengikut total keseluruhan gambar
           const totalProcessedSoFar = start + i + 1;
           setZipProgress(Math.round((totalProcessedSoFar / photos.length) * 100));
         }
 
-        // Generate dan download ZIP untuk pecahan ini
+        // Generate dan download ZIP
         const content = await zip.generateAsync({ type: "blob" });
         
-        // Namakan fail ZIP. Jika lebih dari 1 part, tambah "Part-1", "Part-2"
         const zipName = totalChunks > 1 
-            ? `${clientFolder}-ABGStudioRaya-Part${chunkIndex + 1}.zip` 
-            : `${clientFolder}-ABGStudioRaya.zip`;
+            ? `${clientFolder}-StudioRaya-Part${chunkIndex + 1}.zip` 
+            : `${clientFolder}-StudioRaya.zip`;
             
         saveAs(content, zipName);
 
+        // 2. KOSONGKAN MEMORI: Sangat penting untuk iPhone
         zip = null; 
 
         // 3. MASA REHAT: Beri masa Safari cuci RAM (Garbage Collection) sebelum sambung
         if (chunkIndex < totalChunks - 1) {
             await new Promise(resolve => setTimeout(resolve, 4000)); // Rehat 4 saat
-        } 
-
+        }
       }
 
     } catch (error) {
