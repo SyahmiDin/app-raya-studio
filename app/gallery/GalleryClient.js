@@ -158,8 +158,8 @@ function GalleryContent() {
     setIsZipping(true);
     setZipProgress(0);
 
-    // Tetapkan had maksimum gambar untuk 1 fail ZIP (Cadangan: 100 gambar per ZIP supaya browser tak crash)
-    const MAX_PER_ZIP = 100;
+    // Tetapkan had maksimum gambar untuk 1 fail ZIP
+    const MAX_PER_ZIP = 70;
     const totalChunks = Math.ceil(photos.length / MAX_PER_ZIP);
 
     try {
@@ -202,8 +202,8 @@ function GalleryContent() {
         
         // Namakan fail ZIP. Jika lebih dari 1 part, tambah "Part-1", "Part-2"
         const zipName = totalChunks > 1 
-            ? `${clientFolder}-StudioRaya-Part${chunkIndex + 1}.zip` 
-            : `${clientFolder}-StudioRaya.zip`;
+            ? `${clientFolder}-ABGStudioRaya-Part${chunkIndex + 1}.zip` 
+            : `${clientFolder}-ABGStudioRaya.zip`;
             
         saveAs(content, zipName);
       }
