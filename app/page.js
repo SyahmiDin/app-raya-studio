@@ -303,19 +303,19 @@ export default function Home() {
           }
         `}</style>
 
-                {/* PAKEJ LIST */}
+                {/* PAKEJ LIST - DITUTUP SEMENTARA 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full mb-12">
                     {services.length === 0
-                        ? /* Loading State */
+                        ? 
                           [1, 2, 3].map((i) => (
                               <div
                                   key={i}
                                   className="bg-white/10 h-40 rounded-xl animate-pulse"
                               ></div>
                           ))
-                        : /* Data Loaded */
+                        : 
                           services.map((service, index) => {
-                              // Logic Kiraan Harga Asal (Display Sahaja)
+                              
                               const originalPrice = Math.ceil(
                                   service.price,
                               );
@@ -328,25 +328,17 @@ export default function Home() {
                                           animationDelay: `${index * 200}ms`,
                                       }}
                                   >
-                                      {/* Badge Early Bird
-                                      <div className="absolute top-0 right-0 bg-[#412986] text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider shadow-md">
-                                          Early Bird
-                                      </div> */}
+                                      
 
                                       <div>
                                           <h3 className="font-extrabold text-xl mb-2 text-gray-100 tracking-wide">
                                               {service.name}
                                           </h3>
 
-                                          {/* --- HARGA SECTION --- */}
+                                          
                                           <div className="flex flex-col mb-4 bg-black/20 p-3 rounded-lg border border-white/5">
                                               <div className="flex items-center gap-2 justify-center">
-                                                  {/* <span className="text-gray-400 line-through text-sm decoration-red-500/70 decoration-2">
-                                                      RM{originalPrice}
-                                                  </span> */}
-                                                  {/* <span className="bg-[#412986] text-white text-[10px] font-bold px-1.5 rounded">
-                                                      -10% OFF
-                                                  </span> */}
+                                                  
                                               </div>
                                               <div className="text-4xl font-black text-white drop-shadow-sm mt-1">
                                                   RM{service.price}
@@ -364,7 +356,7 @@ export default function Home() {
                                               </div>
                                           </div>
                                           <div className="flex justify-center mb-6">
-                                              {/* Ubah px-15 kepada px-6 supaya muat mobile, dan tambah w-full */}
+                                              
                                               <div className="text-lg bg-black/20 inline-flex items-center justify-center w-full px-6 py-5 rounded-lg text-gray-200 font-medium text-left">
                                                   <div>
                                                       - ⁠Unlimited Shot
@@ -377,7 +369,7 @@ export default function Home() {
                                           </div>
                                       </div>
 
-                                      {/* --- BUTTON KHAS PADA SETIAP CARD --- */}
+                                      
                                       <Link
                                           href={`/booking?package=${service.id}`}
                                           className="w-full py-3 rounded-xl bg-[#412986] text-white font-bold hover:bg-[#301F63] hover:scale-105 transition transform shadow-lg flex items-center justify-center gap-2 group"
@@ -391,13 +383,15 @@ export default function Home() {
                               );
                           })}
                 </div>
+                */}
+
 
                 {/* Promo Text - Ubah padding supaya text tak terhimpit */}
-                {/* <div className="max-w-6xl w-full bg-black/50 py-4 px-4 md:px-12 rounded-xl mb-4 animate-fade-in-up delay-100 border border-white/10">
+                <div className="max-w-6xl w-full bg-black/50 py-4 px-4 md:px-12 rounded-xl mb-4 animate-fade-in-up delay-100 border border-white/10">
                     <p className="text-white text-base md:text-xl drop-shadow-md italic animate-pulse">
-                        Harga promosi ini sah untuk tempahan dibuat pada bulan Ramadan
+                        Maka dengan ini tamat lah untuk Studio ABG Raya 2026. Jumpa lagi di lain waktu dengan tema yang lebih menarik! Terima kasih semua yang telah menyokong dan menjayakan Studio ABG Raya. Selamat Hari Raya Aidilfitri, Maaf Zahir & Batin!
                     </p>
-                </div> */}
+                </div>
 
                 {/* GOOGLE MAPS / LOCAL SEO */}
                 <Script
