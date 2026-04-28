@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+// @ts-ignore: CSS module declarations are handled globally by Next.js
 import "./globals.css";
 import PromoListener from "./components/PromoListener";
 import MetaPixel from "./components/MetaPixel";

@@ -11,13 +11,11 @@ export default function AdminLoginPage() {
   const handleLogin = (e) => {
     e.preventDefault();
 
-    // --- TETAPKAN PASSWORD ADMIN DI SINI ---
-    // Tuan boleh tukar "admin" dan "raya2026" ikut suka
     const ADMIN_USER = "admin";
     const ADMIN_PASS = "abg2026"; 
 
     if (username === ADMIN_USER && password === ADMIN_PASS) {
-      // Kalau betul, simpan "kunci" dalam browser
+      // simpan "kunci" dalam browser
       localStorage.setItem("studioRayaAdmin", "true");
       // Redirect masuk ke dashboard
       router.push("/admin");
